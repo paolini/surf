@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <math.h>
+
 #include "render.h"
 
 extern int n_triangle(surf &);
@@ -472,7 +474,8 @@ void vectorial_output::print(surf &S,int print_mode)
   cout <<"pv="<<::pv<<"\n";
   dir=direction();
   cout <<"direction="<<dir<<"\n";
-  list=new (triangle*)[n];
+  typedef triangle *triangle_ptr;
+  list=new triangle_ptr[n];
   for (t=S.first_triangle,i=0;i<n;t=t->next,i++)
     list[i]=t;
   if (list==NULL) out_of_memory();

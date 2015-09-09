@@ -1,21 +1,24 @@
 #include <cmath>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "../vector3.h"
+#include "../border.h"
 
+using namespace std;
 
 /****************************/
 /* definizione del contorno */
 /****************************/
 
 // t va da 0 a 2*(3*M_PI+0.5*M_PI)=7*M_PI
-double h=0.3;
-double T=7.0*M_PI;
-double r(double t)
+static double h=0.3;
+static double T=7.0*M_PI;
+static double my_sqr(double x) {return x*x;}
+static double r(double t)
 {
-  return sqr((t-M_PI)/(3.0/2.0*M_PI));
+  return my_sqr((t-M_PI)/(3.0/2.0*M_PI));
 }
-vector3 border_function(double t)
+
+static vector3 border_function(double t)
 {
   double s,x,y,z;
   if (t>7.0/2.0*M_PI) s=7.0*M_PI-t;
@@ -54,7 +57,7 @@ vector3 border_function(double t)
   return vector3(x,y,z);
 }
 
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -88,7 +91,7 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
   return p;
 }
 
-void init_border(surf &S)
+static void init_border(surf &S)
 {
   int i;
   int buco;
@@ -110,8 +113,8 @@ void init_border(surf &S)
   cin>>buco;
   if (buco)
     {
-  a=new_border_vertex(p[2],p[3]);
-  b=new_border_vertex(p[4],p[5]);
+      a=new_border_vertex(S,p[2],p[3]);
+      b=new_border_vertex(S,p[4],p[5]);
 
   S.new_triangle(p[0],p[3],p[4]);
   S.new_triangle(p[0],p[3],a);
@@ -135,3 +138,11 @@ void init_border(surf &S)
   S.new_triangle(p[5],p[3],p[4]);
     }
 }
+
+
+static bool init() {
+  Border::registry["para"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

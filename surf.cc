@@ -13,6 +13,7 @@ using namespace std;
 #include "vector3.h"
 #include "vertex.h"
 #include "render.h"
+#include "border.h"
 
 #ifndef VERSION
 #error La versione va` definita nel Makefile
@@ -394,18 +395,21 @@ vector3 (*dl_border_function)(double);
 vertex* (*dl_new_border_vertex)(surf &S, vertex *v,vertex*w);
 void (*dl_init_border)(surf &);
 
+Border *selected_border = 0;
+
 void init_border(surf &S) {
-  (*dl_init_border)(S);
+  selected_border->init_border(S);
 }
 
 vector3 border_function(double x) {
-  return (*dl_border_function)(x);
+  return selected_border->border_function(x);
 }
 
 vertex* new_border_vertex(surf &S,vertex *v, vertex *w) {
-  return (*dl_new_border_vertex)(S,v,w);
+  return selected_border->new_border_vertex(S,v,w);
 }
 
+/*
 int dl_init(char *name) {
   void *dl;
   char *err;
@@ -448,7 +452,7 @@ int dl_init(char *name) {
   cerr<<"opening file: "<<filename<<"\n";
   abort();
 }
-
+*/
 
 int main(int argc, char *argv[]) {
   surf S;
@@ -461,9 +465,23 @@ int main(int argc, char *argv[]) {
   Action.sa_handler=handler;
   sigaction(SIGINT,&Action,NULL);
 
-  if (argc==2)
-    dl_init(argv[1]);
-  else {
+  if (argc==2) {
+    string name = argv[1];
+    if (name == "--ask") {
+      cout<<"Enter border name:";
+      cin>>name;
+    }
+    if (Border::registry.find(name) != Border::registry.end()) {
+      selected_border = Border::registry[name];
+    } else {
+      cerr<<"invalid border name "<<name<<"\n";
+      cerr<<"registered borders:\n";
+      for (Border::Registry::const_iterator i=Border::registry.begin();i!=Border::registry.end();++i) {
+	cerr<< (i->first) << "\n";
+      }
+      abort();
+    }
+  } else {
     cerr<<"no surface given\n";
     abort();
   }
@@ -658,7 +676,7 @@ int main(int argc, char *argv[]) {
       break;
       case 'O':
 	{
-	  char *filename="film.pov";
+	  const char *filename="film.pov";
 	  ofstream file (filename,ios::out);
 	  pov_ray ray(file,view);
 	  cout<<"Pov-ray: "<<ray<<"\n";
@@ -668,7 +686,7 @@ int main(int argc, char *argv[]) {
       break;
       case 'P':
 	{
-	  char *filename="film.ps";
+	  const char *filename="film.ps";
 	  ofstream file(filename,ios::out);
 	  ps_output ps(file,view,20.0,27.0);
 	  cout<<"Postscript: "<<ps<<"\n";

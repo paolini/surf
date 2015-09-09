@@ -5,6 +5,8 @@
 
 using namespace std;
 
+class matrix;
+
 class vector3 {
  public:
   float x[3];
@@ -44,7 +46,7 @@ class matrix {
  public:
   matrix(void);
   matrix(vector3&, vector3&, vector3&);
-  matrix(matrix &);
+  matrix(const matrix &);
   friend matrix inv(const matrix &);
   friend double det(const matrix &);
   friend vector3 operator*(const matrix &m,vector3 v);

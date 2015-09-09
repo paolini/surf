@@ -1,7 +1,7 @@
 #include <cmath>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "../vector3.h"
+#include "../border.h"
 
 
 /****************************/
@@ -9,15 +9,16 @@
 /****************************/
 
 /* t va da 0 a 2\pi */
-double R=1.0;
-double h=0.2;
-int N;
+static double R=1.0;
+static double h=0.2;
+static int N;
 
-vector3 border_function(double t)
+static vector3 border_function(double t)
 {	
 return vector3(R*cos(t),R*sin(t),h*cos(N*t));
-}	
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+}
+
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -51,12 +52,12 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
     p=S.new_vertex(0.5*(*v+*w));
   return p;
 }
-void quadr(vertex *a,vertex*b,vertex*c,vertex*d)
+static void quadr(surf &S,vertex *a,vertex*b,vertex*c,vertex*d)
 {
   S.new_triangle(a,b,c);
   S.new_triangle(a,c,d);
 }
-void init_border(surf &S)
+static void init_border(surf &S)
 {
   int i;
   int mode;	
@@ -76,3 +77,10 @@ void init_border(surf &S)
       p[i]->next_border=p[(i+1)%3];
   S.new_triangle(p[0],p[1],p[2]);
 }
+
+static bool init() {
+  Border::registry["plateau"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

@@ -1,21 +1,21 @@
-#include <math.h>
+#include <cmath>
 
-#include "vector.h"
-#include "vertex.h"
+#include "../vector3.h"
+#include "../border.h"
 
 /****************************/
 /* definizione del contorno */
 /****************************/
 
 /* t va da 0 a 4\pi */
-double R=1.3;
-double h=1.0;
+static double R=1.3;
+static double h=1.0;
 
-vector border_function(double t) {	
-return vector(R*cos(t),R*sin(t),t>=2.0*M_PI?-h:h);
+static vector3 border_function(double t) {	
+return vector3(R*cos(t),R*sin(t),t>=2.0*M_PI?-h:h);
 }	
 
-vertex* new_border_vertex(vertex *v,vertex *w) {
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w) {
   vertex *p;
   double d;
   if (v->next_border==w || w->next_border==v)
@@ -23,7 +23,7 @@ vertex* new_border_vertex(vertex *v,vertex *w) {
       d=(v->border+w->border)/2.0;
       if (fabs(v->border-w->border)<M_PI)
 	{
-	  p=new vertex(border_function(d));
+	  p=S.new_vertex(border_function(d));
 	  p->border=d;
 	}	
       else 
@@ -33,7 +33,7 @@ vertex* new_border_vertex(vertex *v,vertex *w) {
 	    while (d>=2.0*M_PI) d-=2.0*M_PI;
 	  else
 	    while (d>=4.0*M_PI) d-=2.0*M_PI;
-	  p=new vertex(border_function(d));
+	  p=S.new_vertex(border_function(d));
 	  p->border=d;
 	}
       if (v->next_border==w)
@@ -48,11 +48,11 @@ vertex* new_border_vertex(vertex *v,vertex *w) {
 	}
     }	
   else
-    p=new vertex(0.5*(*v+*w));
+    p=S.new_vertex(0.5*(*v+*w));
   return p;
 }
 
-void init_border(void)
+static void init_border(surf &S)
 {
   int i;
   vertex *p[6];
@@ -64,7 +64,7 @@ void init_border(void)
 
   for (i=0;i<6;i++)
     {
-    p[i]=new vertex(border_function(4.0*M_PI/6.0 * i));
+    p[i]=S.new_vertex(border_function(4.0*M_PI/6.0 * i));
     p[i]->border=4.0*M_PI/6.0 * i;
     }
   for (i=0;i<3;i++)
@@ -78,12 +78,20 @@ void init_border(void)
   cin>>c;
 
   if (c=='d' || c=='D') {
-    new triangle(p[0],p[1],p[2]);
-    new triangle(p[3],p[4],p[5]);
+    S.new_triangle(p[0],p[1],p[2]);
+    S.new_triangle(p[3],p[4],p[5]);
   } else {
     for (i=0;i<3;i++) {
-	new triangle(p[i],p[(i+1)%3],p[i+3]);
-	new triangle(p[i+3],p[(i+1)%3+3],p[(i+1)%3]);
+	S.new_triangle(p[i],p[(i+1)%3],p[i+3]);
+	S.new_triangle(p[i+3],p[(i+1)%3+3],p[(i+1)%3]);
       }
   }
 }
+
+
+static bool init() {
+  Border::registry["catenoid"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

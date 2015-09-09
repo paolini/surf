@@ -1,21 +1,28 @@
 #include <cmath>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "../vector3.h"
+#include "../border.h"
 
 /****************************/
 /* definizione del contorno */
 /****************************/
 
 /* t va da 0 a 4\pi */
-double R=1.0;
-double r=0.4;
+static double R=1.0; //raggio grande
+static double r=0.2; //raggio piccolo
+static double r1=0.4; //altezza?
+static double mysqrt(double x)
+{
+	return x;
+//  return x>0?sqrt(x):-sqrt(-x);
+}
 
-vector3 border_function(double t)
+static vector3 border_function(double t)
 {	
-return vector3((R-r*cos(t/2.0))*cos(t),(R-r*cos(t/2.0))*sin(t),r*(sin(t/2.0)));
-}	
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+return vector3((R-r*cos(3.0*t/2.0))*cos(t),(R-r*cos(3.0*t/2.0))*sin(t),r1*mysqrt(sin(3.0*t/2.0)));
+}
+
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -49,16 +56,16 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
     p=S.new_vertex(0.5*(*v+*w));
   return p;
 }
-void quadr(vertex *a,vertex*b,vertex*c,vertex*d)
-{
-  S.new_triangle(a,b,c);
-  S.new_triangle(a,c,d);
-}
-void init_border(surf &S)
+
+static void init_border(surf &S)
 {
   int i;
   int mode;	
   vertex *p[6];
+
+  cout<<"R= "; cin>>R;
+  cout<<"r= "; cin>>r;
+  cout<<"h= "; cin>>r1;
   
   for (i=0;i<6;i++)
     {
@@ -74,15 +81,28 @@ void init_border(surf &S)
       cout<<"Nastro di moubius\n";
       for (i=0;i<3;i++)
 	{
-	  quadr(p[i],p[i+1],p[(i+4)%6],p[i+3]);
+	  S.new_triangle(p[i],p[i+1],p[(i+4)%6]);
+	  S.new_triangle(p[i],p[(i+3)%6],p[(i+4)%6]);
 	}
     }
   else
     {
-      cout<<"Superficie orientata\n";		
-      S.new_triangle(p[4],p[3],p[5]);
-      quadr(p[0],p[2],p[3],p[5]);
-      S.new_triangle(p[0],p[1],p[2]);
+      vertex *a[2];
+      a[0]= S.new_vertex(vector3(0,0,1));
+      a[1]= S.new_vertex(vector3(0,0,-1));
+      cout<<"Superficie orientata\n";
+      for (i=0;i<6;i++)
+	{
+	  S.new_triangle(p[i],p[(i+1)%6],a[i%2]);
+	  S.new_triangle(p[i],p[(i+3)%6],a[(i+1)%2]);
+	}
     }
 
 }
+
+static bool init() {
+  Border::registry["trefoil"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

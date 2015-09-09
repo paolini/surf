@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "vector3.h"
 
 matrix::matrix(void) {}
@@ -8,7 +10,7 @@ matrix::matrix(vector3 &a,vector3 &b,vector3 &c) {
  x[2]=c;
 }
 
-matrix::matrix(matrix &m) {
+matrix::matrix(const matrix &m) {
   x[0]=m.x[0];
   x[1]=m.x[1];
   x[2]=m.x[2];

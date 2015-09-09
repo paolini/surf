@@ -1,0 +1,4 @@
+*.o
+surf
+examples/*.png
+examples/*.pov

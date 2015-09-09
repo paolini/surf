@@ -1,19 +1,19 @@
 #include <cmath>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "../vector3.h"
+#include "../border.h"
 
 /****************************/
 /* definizione del contorno */
 /****************************/
 
 /* t va da 0 a 6\pi */
-double r=1.0,R=1.5;
-double h=0.7;
-double osc=0.1;
+static double r=1.0,R=1.5;
+static double h=0.7;
+static double osc=0.1;
 
 
-vector3 border_function(double t)
+static vector3 border_function(double t)
 {	
 if (t<2.0*M_PI)
 	return vector3(r*cos(t),r*sin(t),h-osc*cos(2.0*t));
@@ -23,7 +23,7 @@ else
 	return vector3(r*cos(t),r*sin(t),-h-osc*cos(2.0*t));
 	
 }	
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -57,13 +57,13 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
   return p;
 }
 
-void quadr(vertex*a,vertex*b,vertex*c,vertex*d)
+static void quadr(surf &S,vertex*a,vertex*b,vertex*c,vertex*d)
 {
   S.new_triangle(a,b,c);
   S.new_triangle(a,c,d);
 }
 
-void init_border(surf &S)
+static void init_border(surf &S)
 {
   int i,j;
   vertex *p[3][4];
@@ -93,14 +93,14 @@ void init_border(surf &S)
   q=S.new_vertex(vector3(0,0,0));
   for (j=0;j<4;j++)
     {
-      quadr(p[2*((j+1)%2)][j],p[2*((j+1)%2)][(j+1)%4],p[1][(j+1)%4],p[1][j]);
+      quadr(S,p[2*((j+1)%2)][j],p[2*((j+1)%2)][(j+1)%4],p[1][(j+1)%4],p[1][j]);
       S.new_triangle(q,p[1][j],p[0][j]);
       S.new_triangle(q,p[1][j],p[2][j]);
       S.new_triangle(q,p[2*(j%2)][j],p[2*(j%2)][(j+1)%4]);
     }
 }
 
-void init_border_bis(void)
+static void init_border_bis(surf &S)
 {
   int i,j;
   vertex *p[15];
@@ -222,3 +222,10 @@ void init_border_bis(void)
 *********<<*******Disco 2 buchi 1 manico***********************/
 
 } 
+
+static bool init() {
+  Border::registry["marco"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

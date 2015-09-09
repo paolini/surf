@@ -1,20 +1,21 @@
 #include <cmath>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "../vector3.h"
+#include "../border.h"
 /****************************/
 /* definizione del contorno */
 /****************************/
 
 /* t va da 0 a 6\pi */
-double R=1.0;
-double r=0.4;
+static double R=1.0;
+static double r=0.4;
 
-vector3 border_function(double t)
+static vector3 border_function(double t)
 {	
 return vector3((R-r*cos(t/3))*cos(t),(R-r*cos(t/3))*sin(t),r*sin(t/3));
 }	
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -49,7 +50,7 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
   return p;
 }
 
-void init_border(surf &S)
+static void init_border(surf &S)
 {
   int i,j;
   vertex *p[9],*q[3];
@@ -122,3 +123,10 @@ void init_border(surf &S)
       S.new_triangle(p[6],p[7],p[8]);
     }
 }
+
+static bool init() {
+  Border::registry["triple"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

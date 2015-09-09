@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "dlsurf.h"
+#include "../border.h"
 
 
 /****************************/
@@ -8,12 +8,12 @@
 /****************************/
 
 /* t va da 0 a 4 */
-double R=1.0;
-double r=0.1;
-double h=1.0;
-double N=5.5;
+static double R=1.0;
+static double r=0.1;
+static double h=1.0;
+static double N=5.5;
 
-vector3 border_function(double t) {	
+static vector3 border_function(double t) {	
   if (t<2.0) {
     if (t<1.0) { // t in [0,1]
       return vector3(r+t*(R-r),0,-h);
@@ -34,7 +34,7 @@ vector3 border_function(double t) {
   return vector3(R*cos(t),R*sin(t),h*cos(N*t));
 }	
 
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -66,12 +66,12 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
   return p;
 }
 
-void quadr(surf &S, vertex *a,vertex*b,vertex*c,vertex*d) {
+static void quadr(surf &S, vertex *a,vertex*b,vertex*c,vertex*d) {
   S.new_triangle(a,b,c);
   S.new_triangle(a,c,d);
 }
 
-void init_border(surf &S) {
+static void init_border(surf &S) {
   int i;
 
   cout<<"R= ";
@@ -88,9 +88,11 @@ void init_border(surf &S) {
   vertex **q;
   vertex **r;
 
-  p=new (vertex *) [K];
-  q=new (vertex *) [K];
-  r=new (vertex *) [K];
+  typedef vertex *vertex_ptr;
+  
+  p=new vertex_ptr [K];
+  q=new vertex_ptr [K];
+  r=new vertex_ptr [K];
 
 
   r[0]=S.new_vertex(border_function(0.5));
@@ -130,3 +132,11 @@ void init_border(surf &S) {
   }
   
 }
+
+
+static bool init() {
+  Border::registry["helicoid"] = new Border(border_function, new_border_vertex, init_border);
+  return true;
+}
+
+static bool initializer = init();

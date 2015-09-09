@@ -4,6 +4,10 @@ LNK=g++ -g -DVERSION=$(VERSION)
 
 CMP=$(LNK) -c
 
+modules = catenoid cube helicoid infty manu marco moebius para plateau retract spiral trefoil triple
+module_srcs = $(addsuffix .cc, $(modules))
+module_targets = $(addprefix borders/, $(module_srcs))
+
 all: surf
 
 %.so: %.cc
@@ -21,7 +25,14 @@ vertex.o: vertex.cc vertex.h
 surf.o: surf.cc vector3.h
 	$(CMP) $<
 
-surf: surf.o vector3.o render.o vertex.o
+border.o: border.cc border.h
+	$(CMP) $<
+
+piece.o: piece.cc piece.h
+	$(CMP) $<
+
+surf: surf.o vector3.o render.o vertex.o border.o piece.o $(module_targets)
+	echo targets: $(module_targets)
 	$(LNK) $^ -rdynamic -ldl -o $@
 
 clean::
