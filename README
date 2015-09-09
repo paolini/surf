@@ -1,0 +1,137 @@
+***********************************************************************
+** INFORMATION
+***********************************************************************
+
+Author:
+	http://www.math.unifi.it/paolini/
+
+Examples:
+	http://www.math.unifi.it/paolini/diletto/minime/
+
+Source code:
+	http://www.math.unifi.it/paolini/src/
+
+
+***********************************************************************
+** DESCRIPTION
+***********************************************************************
+
+This program computes the mimimal surface (i.e. the surface with minimal area) 
+among all surfaces with a given boundary. The boundary has to be defined by
+the user by providing a simple C (or C++) program. Many examples of predefined
+boundaries are given in the "example" directory (see below). Also the user
+has to define a "starting surface" which is any surface (given by 
+triangulation) of the given boundary.
+
+Following the user instruction the progam will refine the triangulation of the
+given surface and evolve it following the steepest descent of the Area 
+functional.
+
+The program can plot the resulting surface in a PostScript file or can write
+a datafile to be rendered by POVRAY.
+
+***********************************************************************
+** COMPILATION
+***********************************************************************
+
+Simply:
+	make
+
+The boundaries are given through C source files and have to be compiled
+into "shared-object files". See examples/Makefile for examples.
+
+***********************************************************************
+** EXAMPLES
+***********************************************************************
+
+In the example directory there are some examples. The boundaries are
+described in the files "*.cc" while in "*.pill" there is the input
+keys to give to the program "surf" to obtain the desired surface.
+
+You can "make" the corresponding .png files. For example
+
+	make catenoid.png
+
+to get the whole calculation and rendering (you need POVRAY to be installed).
+
+Otherwise you can run manually the program.
+
+Here is an example session. '$' is the shell prompt, '#' marks comments.
+
+
+  $ tar xzf surf-1.0.tgz		# extract the source code
+  $ cd surf-1.0
+  $ make				# compile
+  g++ -c -DVERSION=1.0 surf.cc
+  g++ -c vector.cc
+  g++ -c render.cc
+  g++ surf.o vector.o render.o -rdynamic -ldl -o surf
+  $ cd examples
+  $ make catenoid.so		# compile the boundary for the catenoid example
+  g++ -I.. -shared catenoid.cc -o catenoid.so
+  $ ../surf catenoid.so  	# start the program with the given boundary
+  R=1				# give the radius of the circles
+  h=0.5				# distance between circles
+  Vuoi l'iperboloide (i) o i due dischi (d)? i	# choose 'i' or 'd'
+  Passo n. 0
+  Triangoli: 6, vertici: 6. L'area totale e':5.19615
+  Camera: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  t				# triangulate
+  Enter radius: 0.2		# up to size 0.2
+  
+  radius: 1.7
+  radius: 1.445
+  [...]
+  ...done!
+  Passo n. 1
+  Triangoli: 1326, vertici: 711. L'area totale e':7.42465
+  Camera: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  e				# evolve the surface to minimal
+  Evolving... epsilon=1e-06visco=0.125 visco=0.0625  5.99203->5.99216...
+  done.
+  Passo n. 2
+  Triangoli: 1326, vertici: 711. L'area totale e':5.99029
+  Camera: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  P				# plot the result on the file film.ps
+  Postscript: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,4.47214,8.94427), ...
+  printing symplex...
+  pv=(0,-6,3)
+  direction=(0,35.7771,-17.8885)
+  Sorting triangles...
+   ...done.
+  (0)
+  (100)
+  [...]
+  ...done.
+  PS written on file film.ps
+  Passo n. 3
+  Triangoli: 1326, vertici: 711. L'area totale e':5.99029
+  Camera: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  Pov-ray: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  O				# write POVRAY datafile on film.pov
+  POV written on file film.pov	
+  Passo n. 4
+  Triangoli: 1326, vertici: 711. L'area totale e':5.99029
+  Camera: {PV=(0,-6,3), Look=(0,0,0), ScrY=(0,0.447214,0.894427), ...
+  X				# Quit!
+  Exiting...
+  $
+  $ gv film.ps &			# view result!
+  $ povray +i film.pov            	# render with POVRAY
+  [...]
+  $ gimp film.tga &			# view the rendered result!
+  $ 
+
+***********************************************************************
+** TRACELOG
+***********************************************************************
+
+14.03.2003: README, packaging, tracelog.
+
+20.02.2003: version 1.0: dynamical modularization, better POV output,
+	examples and pills.
+
+
+
+
+

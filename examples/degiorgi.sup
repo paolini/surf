@@ -1,0 +1,25 @@
+double alpha;
+static vector n(1.0,0.8,0.6);
+double i_f(vector v)
+{
+  return sin(v.x[0])+sin(v.x[1])+sin(alpha*v.x[2]);
+}
+vector i_grad(vector v)
+{
+  return vector(cos(v.x[0]),cos(v.x[1]),cos(v.x[2]));
+}	
+void init_border(void)
+{
+  vector from, to;double step;double radius;
+  cout<<"Cube From: ";
+  cin>>from;
+  cout<<"To: ";
+  cin>>to;
+  cout<<"step: ";
+  cin>>step;
+  cout<<"alpha: ";
+  cin>>alpha;
+  cout<<"radius: ";
+  cin>>radius;
+  implicit(from,to,step,radius);
+}	
