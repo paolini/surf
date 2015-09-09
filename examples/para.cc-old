@@ -1,7 +1,7 @@
-#include <cmath>
+#include <math.h>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "vector.h"
+#include "vertex.h"
 
 
 /****************************/
@@ -15,7 +15,7 @@ double r(double t)
 {
   return sqr((t-M_PI)/(3.0/2.0*M_PI));
 }
-vector3 border_function(double t)
+vector border_function(double t)
 {
   double s,x,y,z;
   if (t>7.0/2.0*M_PI) s=7.0*M_PI-t;
@@ -51,10 +51,10 @@ vector3 border_function(double t)
 	}
     }
   if (t>7.0/2.0*M_PI) y=-y;
-  return vector3(x,y,z);
+  return vector(x,y,z);
 }
 
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+vertex* new_border_vertex(vertex *v,vertex *w)
 {
   vertex *p;
   double d;
@@ -63,13 +63,13 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
       d=(v->border+w->border)/2.0;
       if (fabs(v->border-w->border)<T/2.0)
 	{
-	  p=S.new_vertex(border_function(d));
+	  p=new vertex(border_function(d));
 	  p->border=d;
 	}	
       else 
 	{
 	  d+=T/2.0;
-	  p=S.new_vertex(border_function(d));
+	  p=new vertex(border_function(d));
 	  p->border=d;
 	}
       if (v->next_border==w)
@@ -84,20 +84,20 @@ vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
 	}
     }	
   else
-    p=S.new_vertex(0.5*(*v+*w));
+    p=new vertex(0.5*(*v+*w));
   return p;
 }
 
-void init_border(surf &S)
+void init_border(void)
 {
   int i;
   int buco;
-  vector3 v(0,0,0);
+  vector v(0,0,0);
   vertex *p[7],*q;
   vertex *a,*b;
   for (i=0;i<7;i++)
     {
-    p[i]=S.new_vertex(border_function(T/7.0*i));
+    p[i]=new vertex(border_function(T/7.0*i));
     p[i]->border=T/7*i;
     }
   for (i=0;i<7;i++)
@@ -113,25 +113,25 @@ void init_border(surf &S)
   a=new_border_vertex(p[2],p[3]);
   b=new_border_vertex(p[4],p[5]);
 
-  S.new_triangle(p[0],p[3],p[4]);
-  S.new_triangle(p[0],p[3],a);
-  S.new_triangle(p[0],p[4],b);
-  S.new_triangle(p[0],p[1],a);
-  S.new_triangle(p[0],p[6],b);
+  new triangle(p[0],p[3],p[4]);
+  new triangle(p[0],p[3],a);
+  new triangle(p[0],p[4],b);
+  new triangle(p[0],p[1],a);
+  new triangle(p[0],p[6],b);
   
-  S.new_triangle(p[1],p[2],p[5]);
-  S.new_triangle(p[1],p[6],p[5]);
-  S.new_triangle(p[2],p[5],b);
-  S.new_triangle(p[2],a,b);
-  S.new_triangle(p[1],p[6],a);
-  S.new_triangle(p[6],b,a);
+  new triangle(p[1],p[2],p[5]);
+  new triangle(p[1],p[6],p[5]);
+  new triangle(p[2],p[5],b);
+  new triangle(p[2],a,b);
+  new triangle(p[1],p[6],a);
+  new triangle(p[6],b,a);
     }
   else
     {
-  S.new_triangle(p[0],p[6],p[1]);
-  S.new_triangle(p[6],p[1],p[5]);
-  S.new_triangle(p[1],p[2],p[5]);
-  S.new_triangle(p[2],p[5],p[3]);
-  S.new_triangle(p[5],p[3],p[4]);
+  new triangle(p[0],p[6],p[1]);
+  new triangle(p[6],p[1],p[5]);
+  new triangle(p[1],p[2],p[5]);
+  new triangle(p[2],p[5],p[3]);
+  new triangle(p[5],p[3],p[4]);
     }
 }

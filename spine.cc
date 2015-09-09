@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "vector.h"
+#include "vector3.h"
 #include "vertex.h"
 
 extern int side_triangulate(vertex *v, vertex *w);
@@ -26,17 +26,17 @@ int N;
 // t=2*(2*k+1)*M_PI e' il cerchio in basso della spina k
 // t=2*(2*k+2)*M_PI e' il cerchio in alto della spina k
 
-vector border_function(double t)
+vector3 border_function(double t)
 {	
   static int k,h;
   if (t>=2*M_PI)
     {
       h=(int)((t/(2.0*M_PI)-1.0))%2;
       k=(int)((t/(2.0*M_PI)-1.0)/2.0);
-      return vector(r*cos(t)+x[k],r*sin(t)+y[k],h?1.0:0.0);
+      return vector3(r*cos(t)+x[k],r*sin(t)+y[k],h?1.0:0.0);
     }
   else
-    return vector(cos(t),sin(t),0);
+    return vector3(cos(t),sin(t),0);
 }	
 
 vertex* new_border_vertex(vertex *v,vertex *w)
@@ -94,7 +94,7 @@ void init_border(void)
   cin>>N_SPINE;
 
   t=0.0;
-  p0=new vertex(vector(0,0,0));
+  p0=new vertex(vector3(0,0,0));
   for (i=0;i<10*N;i++)
     {  
     p=new vertex(border_function(t));
@@ -131,12 +131,12 @@ void init_border(void)
       x[k]=xx;
       y[k]=yy;
       t0=2.0*(2.0*k+1)*M_PI;
-      p0=new vertex(vector(x[k],y[k],1));
+      p0=new vertex(vector3(x[k],y[k],1));
       for (i=0;i<N;i++)
 	{
 	  t=2.0*M_PI/N*i;
-	  q=new vertex(vector(r*cos(t)+x[k],r*sin(t)+y[k],0));
-	  p=new vertex(vector(r*cos(t)+x[k],r*sin(t)+y[k],1.0));
+	  q=new vertex(vector3(r*cos(t)+x[k],r*sin(t)+y[k],0));
+	  p=new vertex(vector3(r*cos(t)+x[k],r*sin(t)+y[k],1.0));
 	  q->border=t0+t;
 	  p->border=t0+t+2.0*M_PI;
 	  if (i>0)

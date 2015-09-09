@@ -126,7 +126,10 @@ Here is an example session. '$' is the shell prompt, '#' marks comments.
 ** TRACELOG
 ***********************************************************************
 
-08.07.2003: added helicoid example.
+21.04.2004: version 1.2: solved compatibility issues with gcc and povray
+	currently works with: gcc 3.3.3 and povray 3.5 of Debian GNU-Linux.
+
+09.07.2003: version 1.1: added helicoid example, portable C++ dl_open method
 
 14.03.2003: README, packaging, tracelog.
 

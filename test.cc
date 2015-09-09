@@ -64,7 +64,7 @@ void init_border(surf &S)
 
   for (i=0;i<6;i++)
     {
-    p[i]=S.new_vertex(border_function(4.0*M_PI/6.0 * i));
+    p[i]=new vertex(S,border_function(4.0*M_PI/6.0 * i));
     p[i]->border=4.0*M_PI/6.0 * i;
     }
   for (i=0;i<3;i++)

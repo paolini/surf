@@ -1,10 +1,10 @@
 #ifndef _RENDER_H_
 #define _RENDER_H_
 
-#include "vector.h"
+#include "vector3.h"
 #include "vertex.h"
 
-class color: public vector {
+class color: public vector3 {
 public:
   color(double grayscale);
   color(double r,double g, double b);
@@ -20,32 +20,32 @@ abs(screen_x)=1/2*larghezza del monitor...
 
 class camera {
 protected:
-  vector mypv;
-  vector screen_z,screen_x,screen_y;
-  vector mylight;
-  vector myup;
-  vector look;
+  vector3 mypv;
+  vector3 screen_z,screen_x,screen_y;
+  vector3 mylight;
+  vector3 myup;
+  vector3 look;
 
 public:
   camera(const camera &);
   camera(void);
 
-  void pv(const vector &);
-  const vector &pv(void) const;
+  void pv(const vector3 &);
+  const vector3 &pv(void) const;
   void adjust(void);
-  void look_at(const vector &);
-  const vector &look_at(void) const;
-  const vector & direction(void) const;
-  void up(const vector &);
-  vector up(void) const;
+  void look_at(const vector3 &);
+  const vector3 &look_at(void) const;
+  const vector3 & direction(void) const;
+  void up(const vector3 &);
+  vector3 up(void) const;
   void film(double width,double height,int mode=0); 
   // mode= 0:fit, 1:resize 
-  double X(const vector &) const;
-  double Y(const vector &) const;  
+  double X(const vector3 &) const;
+  double Y(const vector3 &) const;  
   void zoom(double factor);
-  void light(const vector &);
-  const vector &light(void) const;		 
-  double scaling(const vector &point) const;
+  void light(const vector3 &);
+  const vector3 &light(void) const;		 
+  double scaling(const vector3 &point) const;
 
   friend ostream&operator<<(ostream&,camera&);
 };
@@ -56,7 +56,7 @@ protected:
   int mymaxx,mymaxy;
   int myx,myy; 
 public: 
-  void print(int);
+  void print(surf &,int);
 
   int scan_x(void);
   int scan_y(void);
@@ -64,7 +64,7 @@ public:
   int maxy(void);
   void maxx(int);
   void maxy(int);
-  vector scan(void);
+  vector3 scan(void);
   virtual int putpixel(color c)=0;
   bitmap_output(camera &view,int maxx,int maxy,double xpix,double ypix);
   virtual int inc(void);
@@ -92,11 +92,11 @@ public:
 
 class vectorial_output: public camera {
 public:
-  virtual void out_triangle(vector,vector,vector,color)=0; 
-  virtual void out_line(vector,vector,double width,color)=0;
+  virtual void out_triangle(vector3,vector3,vector3,color)=0; 
+  virtual void out_line(vector3,vector3,double width,color)=0;
   virtual void out_triangle(triangle &, int print_mode);
   vectorial_output(const camera &view);
-  virtual void print(int print_mode);
+  virtual void print(surf &S,int print_mode);
 };
 
 class ps_output:public vectorial_output
@@ -108,8 +108,8 @@ private:
   double left_margin,lower_margin;
 
 public:  
-  virtual void out_triangle(vector,vector,vector,color);
-  virtual void out_line(vector,vector,double,color);
+  virtual void out_triangle(vector3,vector3,vector3,color);
+  virtual void out_line(vector3,vector3,double,color);
   void out_color(color);
   ps_output(ostream &out,camera &view,double width=20.0, double height=26.0,
 	    double page_width=21.0,double page_height=27.0);
@@ -118,21 +118,18 @@ public:
   double ps_y(double y);
 };
 
-class pov_ray:public vectorial_output
-{
+class pov_ray:public vectorial_output {
 private:
   ostream *out;
 public:
-  virtual void out_triangle(vector,vector,vector,color);
+  virtual void out_triangle(vector3,vector3,vector3,color);
   virtual void out_triangle(triangle &, int print_mode);
-  virtual void out_line(vector,vector,double,color);
-  virtual void print(int print_mode);
+  virtual void out_line(vector3,vector3,double,color);
+  virtual void print(surf &,int print_mode);
   void out_color(color);
-  void out_vector(vector);
+  void out_vector3(vector3);
   pov_ray(ostream &out,camera &view);
   ~pov_ray();
 };
-
-
 
 #endif

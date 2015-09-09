@@ -1,7 +1,7 @@
-#include <cmath>
+#include <math.h>
 
-#include "vector3.h"
-#include "dlsurf.h"
+#include "vector.h"
+#include "vertex.h"
 
 extern int side_triangulate(vertex *v, vertex *w);
 extern void side_triangulate(double radius,int border=0);
@@ -11,14 +11,14 @@ extern triangle* first_triangle;
 double depth=0.5;
 
 
-vector3 border_function(double t)
+vector border_function(double t)
 {
-  return vector3(0,0,0);
+  return vector(0,0,0);
 }
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
+vertex* new_border_vertex(vertex *v,vertex *w)
 {
   vertex *p;
-  p=S.new_vertex(0.5*(*v+*w));
+  p=new vertex(0.5*(*v+*w));
   return p;
 }
 
@@ -29,21 +29,21 @@ int nv=0;
 int double_vertex(double x,double y)
 {
   cout<<"vertex("<<x<<","<<y<<")\n";
-  p[nv][0]=S.new_vertex(vector3(x,y,-depth));
-  p[nv][1]=S.new_vertex(vector3(x,y,depth));
+  p[nv][0]=new vertex(vector(x,y,-depth));
+  p[nv][1]=new vertex(vector(x,y,depth));
   nv++;
 }
 
 void lato(int a, int b)
 {
   cout<<"lato("<<a<<","<<b<<")\n";
-  S.new_triangle(p[a][0],p[b][0],p[b][1]);
-  S.new_triangle(p[a][0],p[b][1],p[a][1]);
+  new triangle(p[a][0],p[b][0],p[b][1]);
+  new triangle(p[a][0],p[b][1],p[a][1]);
 }
 void triangolo(int a,int b ,int c)
 {
-  S.new_triangle(p[a][0],p[b][0],p[c][0]);
-  S.new_triangle(p[a][1],p[b][1],p[c][1]);
+  new triangle(p[a][0],p[b][0],p[c][0]);
+  new triangle(p[a][1],p[b][1],p[c][1]);
 }
 void quadrato(int a, int b, int c, int d)
 {
@@ -187,17 +187,17 @@ double make(char *s)
 
 double l;
 double R=1.0,r=0.4,h=0.1;
-vector3 transform(vector3 v)
+vector transform(vector v)
 {
   double a,b;
   v.x[0]*=2.0*M_PI/l;
   v.x[1]=(v.x[1]-2.5)/5.0;
   a=r*v.x[1]*cos(v.x[0]/2.0)+h*v.x[2]*sin(v.x[0]/2.0);
   b=h*v.x[2]*cos(v.x[0]/2.0)-r*v.x[1]*sin(v.x[0]/2.0);
-  return vector3((R+a)*cos(v.x[0]),(R+a)*sin(v.x[0]),b);
+  return vector((R+a)*cos(v.x[0]),(R+a)*sin(v.x[0]),b);
 }
   
-void init_border(surf &S)
+void init_border(void)
 {
   vertex *v;
   double radius;
@@ -213,6 +213,6 @@ void init_border(surf &S)
   side_triangulate(radius);
   for (v=first_vertex;v!=NULL;v=v->next)
     {
-      *(vector3*)v=transform(*v);
+      *(vector*)v=transform(*v);
     }
 }

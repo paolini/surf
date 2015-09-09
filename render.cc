@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include "render.h"
 
-extern int n_triangle();
-extern triangle* first_triangle;
+extern int n_triangle(surf &);
+//extern triangle* S.first_triangle;
 extern int out_of_memory(void);
-extern double diameter();
+extern double diameter(surf &);
 
 double linewidth=15;
 
@@ -20,17 +20,17 @@ color::color(double c) {
 
 // CAMERA
 
-double camera::scaling(const vector &v) const {
+double camera::scaling(const vector3 &v) const {
   return abs(screen_z)/((v-mypv)*screen_z);
 }
 
 camera::camera(void) {
-  mypv=vector(0,0,0);
-  screen_z=vector(0,1,0);
-  screen_y=vector(0,0,1);
-  screen_x=vector(1,0,0);
-  mylight=vector(0,0,1);
-  myup=vector(0,0,1);
+  mypv=vector3(0,0,0);
+  screen_z=vector3(0,1,0);
+  screen_y=vector3(0,0,1);
+  screen_x=vector3(1,0,0);
+  mylight=vector3(0,0,1);
+  myup=vector3(0,0,1);
 }
 
 camera::camera(const camera &c) {
@@ -42,28 +42,28 @@ camera::camera(const camera &c) {
   look=c.look;
 }
 
-void camera::light(const vector &v) {
+void camera::light(const vector3 &v) {
   mylight=v;
   if (abs(mylight)>1.0) mylight=versor(mylight);
 }
 
-const vector &camera::light(void) const {
+const vector3 &camera::light(void) const {
   return mylight;
 }
-const vector &camera::direction(void) const {
+const vector3 &camera::direction(void) const {
   return screen_z;
 }
 
-void camera::pv(const vector &v) {
+void camera::pv(const vector3 &v) {
   mypv=v;
   look_at(look);
 }
 
-const vector &camera::pv(void) const {
+const vector3 &camera::pv(void) const {
   return mypv;
 }
 
-void camera::film(double w,double h,int mode=0) {
+void camera::film(double w,double h,int mode) {
   double k;
   if (mode==0) //fit
     {
@@ -82,12 +82,12 @@ void camera::film(double w,double h,int mode=0) {
     }
 }
 
-double camera::X(const vector &v) const {
+double camera::X(const vector3 &v) const {
   return ((v-mypv)*versor(screen_x))*sqr(screen_z)
     /((v-mypv)*screen_z);
 }
 
-double camera::Y(const vector &v) const {
+double camera::Y(const vector3 &v) const {
   return ((v-mypv)*versor(screen_y))*sqr(screen_z)
     /((v-mypv)*screen_z);
 }
@@ -96,17 +96,17 @@ void camera::zoom(double k) {
   screen_z=k*screen_z;
 }
 
-void camera::look_at(const vector &v) {
+void camera::look_at(const vector3 &v) {
   screen_z=abs(screen_z)*versor(v-mypv);
   look=v;
   adjust();
 }
 
-const vector &camera::look_at(void) const {
+const vector3 &camera::look_at(void) const {
   return look;
 }
 
-void camera::up(const vector &v) {
+void camera::up(const vector3 &v) {
   myup=v;
   adjust();
 }
@@ -114,11 +114,11 @@ void camera::up(const vector &v) {
 void camera::adjust(void) {
   double f;
   if (abs(screen_z)==0.0)
-    screen_z=vector(0,1,0);
+    screen_z=vector3(0,1,0);
   if (abs(screen_x)==0.0)
-    screen_x=vector(1,0,0);
+    screen_x=vector3(1,0,0);
   if (abs(screen_y)==0.0)
-    screen_y=vector(0,0,1);
+    screen_y=vector3(0,0,1);
   
   if (abs(screen_z^myup)!=0.0)
     screen_x=abs(screen_x)*versor(screen_z^myup);
@@ -143,7 +143,7 @@ random_bitmap_output::random_bitmap_output(camera &view,int maxx,int maxy,double
 :bitmap_output(view,maxx,maxy,xpix,ypix)
 {}
 
-vector bitmap_output::scan(void)
+vector3 bitmap_output::scan(void)
 {
   //  return screen_z
   //  +xpix*(myx-mymaxx/2)*versor(screen_x)
@@ -188,7 +188,7 @@ int random_bitmap_output::putpixel(color c)
 }
 
 
-text_output::text_output(ostream &o, camera &view,int l=24,int c=80,double xpix=1.0,double ypix=2.0)
+text_output::text_output(ostream &o, camera &view,int l,int c,double xpix,double ypix)
   :bitmap_output(view,c,l,xpix,ypix)
 {
   film(xpix*c,ypix*l,0);
@@ -207,7 +207,7 @@ vectorial_output::vectorial_output(const camera &view)
   :camera(view) {
 }
 
-color triangle_color(triangle &t,vector light)
+color triangle_color(triangle &t,vector3 light)
 {
   return color(fabs(versor(((*(t.v[2])-*(t.v[0]))^(*(t.v[1])-*(t.v[0]))))*light));
 }
@@ -220,8 +220,8 @@ double ps_output::ps_y(double y) {
   return (y+height/2.0+lower_margin)*(72.0/2.54);
 }
 
-ps_output::ps_output(ostream &o,camera &view,double w=20.0,double h=26.0,
-		     double pw=21.0,double ph=27.0):vectorial_output(view) {
+ps_output::ps_output(ostream &o,camera &view,double w,double h,
+		     double pw,double ph):vectorial_output(view) {
   double k;
   out=&o;
   width=w;height=h;
@@ -232,7 +232,7 @@ ps_output::ps_output(ostream &o,camera &view,double w=20.0,double h=26.0,
   left_margin=(page_width-width)/2;
   lower_margin=(page_height-height)/2;
   (*out)<<"%!PS-Adobe-2.0 EPSF-2.0\n"
-	<<"%%Title: Vectorial Output\n"
+	<<"%%Title: Vector3ial Output\n"
 	<<"%%Creator: sup.cpp, Manu-fatto (Emanuele Paolini)\n"
 	<<"%%BoundingBox: "<<ps_x(-width/2.0)<<" "<<ps_y(-height/2.0)<<" "
 	<<ps_x(width/2.0)<<" "<<ps_y(height/2.0)<<"\n"
@@ -269,7 +269,7 @@ void ps_output::out_color(color c)
 {
   *out<<c.x[0]<<" "<<c.x[1]<<" "<<c.x[2]<<" C\n";
 }
-void ps_output::out_line(vector p1,vector p2,double width,color c)
+void ps_output::out_line(vector3 p1,vector3 p2,double width,color c)
 {
   *out<<"N ";
   *out<<ps_x(X(p1))<<" "<<ps_y(Y(p1))<<" M ";
@@ -278,7 +278,7 @@ void ps_output::out_line(vector p1,vector p2,double width,color c)
   out_color(c);
   *out<<"S\n";
 }
-void ps_output::out_triangle(vector p1,vector p2,vector p3,color c)
+void ps_output::out_triangle(vector3 p1,vector3 p2,vector3 p3,color c)
 {
   *out<<"N ";
   *out<<ps_x(X(p1))<<" "<<ps_y(Y(p1))<<" M ";
@@ -323,14 +323,14 @@ void vectorial_output::out_triangle(triangle &t, int print_mode) {
 void pov_ray::out_triangle(triangle &t, int print_mode) {
   int i,k;
   class triangle_list *l;
-  vector n,N,n1;
+  vector3 n,N,n1;
   double d;
   
   if (print_mode!=0) {
     *out<<"smooth_triangle {";
     for (i=0;i<3;i++)
       {
-	n=vector(0,0,0);
+	n=vector3(0,0,0);
 	N=versor(t.normal());
 	for (k=0,l=t.v[i]->list;l!=NULL;l=l->next,k++) {
 	    n1=versor(l->first->normal());
@@ -346,9 +346,9 @@ void pov_ray::out_triangle(triangle &t, int print_mode) {
 	  {
 	    cerr<<"Errore interno #9178\n";
 	  }
-	out_vector(*(t.v[i]));
+	out_vector3(*(t.v[i]));
 	*out<<" ";
-	out_vector(1.0/(double)k*n);
+	out_vector3(1.0/(double)k*n);
 	*out<<" ";
       }
     *out<<" texture {Color}}\n";
@@ -370,37 +370,37 @@ void pov_ray::out_triangle(triangle &t, int print_mode) {
   }
 }
 
-void pov_ray::out_line(vector a,vector b,double r,color) {
+void pov_ray::out_line(vector3 a,vector3 b,double r,color) {
   const double r_scale=0.001;
   *out<<"cylinder { ";
-  out_vector(a);
+  out_vector3(a);
   *out<<", ";
-  out_vector(b);
+  out_vector3(b);
   *out<<", "<<r*r_scale<<" open ";  
   *out<<" texture {Wire}}\n";
 
   *out<<"sphere { ";
-  out_vector(a);
+  out_vector3(a);
   *out<<", "<<r*r_scale<<" texture {Wire}}\n";
 }
 
-void pov_ray::out_vector(vector v)
+void pov_ray::out_vector3(vector3 v)
 {
   *out<<"<"<<v.x[0]<<","<<v.x[1]<<","<<v.x[2]<<">";
 }
 void pov_ray::out_color(color x)
 {
   *out<<"color rgb ";
-  out_vector(x);
+  out_vector3(x);
   *out<<"";
 }
 
-void pov_ray::out_triangle(vector a, vector b,vector c,color x)
+void pov_ray::out_triangle(vector3 a, vector3 b,vector3 c,color x)
 {
   *out<<"triangle{";
-  out_vector(a);
-  out_vector(b);
-  out_vector(c);
+  out_vector3(a);
+  out_vector3(b);
+  out_vector3(c);
   *out<<" texture {Color}}\n";
 }
 
@@ -410,15 +410,15 @@ pov_ray::pov_ray(ostream &o,camera &v):vectorial_output(v) {
   *out<<"// ratio: X->"<<abs(screen_x)<<" Y->"<<abs(screen_y)<<"\n";
 
   *out<<"camera{location ";
-  out_vector(pv());
+  out_vector3(pv());
   *out<<"\nsky ";
-  out_vector(screen_y);
+  out_vector3(screen_y);
   *out<<"\nlook_at ";
-  out_vector(look_at());
+  out_vector3(look_at());
   *out<<"}\n\n";
 
   *out<<"light_source{ ";
-  out_vector(look_at()-10.0*light());
+  out_vector3(look_at()-10.0*light());
   *out<<" ";
   out_color(color(1.0));
   *out<<"}\n";
@@ -450,8 +450,8 @@ char text_output::gray_scale[12]={' ','.',',',':',';','i','|','[','I','X','W','@
 int text_output::scale_length=12;
 
 /*************** 3d vettoriale *********/
-vector pv;
-vector dir;
+vector3 pv;
+vector3 dir;
 int triangle_compare(const void *T1,const void *T2)
 {
   triangle **t1, **t2;
@@ -460,27 +460,27 @@ int triangle_compare(const void *T1,const void *T2)
   return ((((*t1)->bari()-pv)*dir-((*t2)->bari()-pv)*dir)>0.0)?-1:1;
 }
 
-void vectorial_output::print(int print_mode)
+void vectorial_output::print(surf &S,int print_mode)
 {
   int n,i,j;
   triangle **list; /*array con i puntatori ai triangoli da ordinare*/
   triangle *t;
   double x0,x1,y0,y1,x,d;
   cout<<"printing symplex...\n";
-  n=n_triangle();
+  n=n_triangle(S);
   ::pv=pv(); 
   cout <<"pv="<<::pv<<"\n";
   dir=direction();
   cout <<"direction="<<dir<<"\n";
   list=new (triangle*)[n];
-  for (t=first_triangle,i=0;i<n;t=t->next,i++)
+  for (t=S.first_triangle,i=0;i<n;t=t->next,i++)
     list[i]=t;
   if (list==NULL) out_of_memory();
   cout<<"Sorting triangles...\n";
   qsort(list,n,sizeof(triangle *),triangle_compare);
   cout<<" ...done.\n";
 
-  d=diameter();
+  d=diameter(S);
   for (i=0,j=0;i<n;i++) {
     if (print_mode==0) {
       for (;j<n && i<n 
@@ -488,27 +488,27 @@ void vectorial_output::print(int print_mode)
 	   j++)
 	out_triangle(*(list[j]),-1);
     }
-    if (i%100==0)
+    if (i%250==0)
       cout<<"("<<i<<")\n";
     out_triangle(*(list[i]),print_mode);
   }
   cout<<"\n...done.\n";
 }
 
-void pov_ray::print(int print_mode) {
+void pov_ray::print(surf &S,int print_mode) {
   triangle *t;
-  for (t=first_triangle; t; t=t->next) {
+  for (t=S.first_triangle; t; t=t->next) {
     out_triangle(*t,print_mode);
   }
 }
 
 /************** ray-tracer ****************/
-vector light;
+vector3 light;
 
-double intersection(triangle *t,vector ray) /*torna -1.0 se non interseca*/
+double intersection(triangle *t,vector3 ray) /*torna -1.0 se non interseca*/
 {
   static matrix m;
-  static vector alpha;
+  static vector3 alpha;
   ray-=pv;
   m.x[0]=*(t->v[0])-pv;
   m.x[1]=*(t->v[1])-pv;
@@ -519,13 +519,13 @@ double intersection(triangle *t,vector ray) /*torna -1.0 se non interseca*/
   else
     return -1.0;
 }
-color ray_color(vector v)
+color ray_color(surf &S,vector3 v)
 {
   triangle *t;
   triangle *found;
   double dist=-1.0;
   double d;
-  for (t=first_triangle;t!=NULL;t=t->next)
+  for (t=S.first_triangle;t!=NULL;t=t->next)
     {
       d=intersection(t,v);
       if (d>=0 && (d<dist || dist==-1.0))
@@ -541,14 +541,13 @@ color ray_color(vector v)
     return color(0);
 }
 
-void bitmap_output::print(int print_mode) {
+void bitmap_output::print(surf &S,int print_mode) {
   int cont;
   cout<<"printing bitmap "<<maxx()<<"x"<<maxy()<<"...\n";
   ::pv=pv();
   ::light=light();
   do
     {
-      cont=putpixel(ray_color(scan()+::pv));
+      cont=putpixel(ray_color(S,scan()+::pv));
     }while (cont);
 }
-

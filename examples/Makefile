@@ -43,7 +43,7 @@ inftybd.cc: infty.cc
 	rm film.ps
 
 %.png: %.pov
-	povray Width=640 Height=480 +Q11 +A0.2 +i $< +FN +O $@
+	povray Width=640 Height=480 +Q11 +A0.2 +I$< +FN +O$@
 
 surf: 
 	make -C .. surf
