@@ -126,6 +126,8 @@ Here is an example session. '$' is the shell prompt, '#' marks comments.
 ** TRACELOG
 ***********************************************************************
 
+08.07.2003: added helicoid example.
+
 14.03.2003: README, packaging, tracelog.
 
 20.02.2003: version 1.0: dynamical modularization, better POV output,

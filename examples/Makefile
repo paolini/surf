@@ -1,4 +1,4 @@
-names= catenoid cube disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd manu
+names= catenoid cube disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd manu helicoid
 
 pngs= $(addsuffix .png, $(names))
 bigs= $(addsuffix -big.png, $(names))
