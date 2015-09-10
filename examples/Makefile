@@ -2,7 +2,7 @@ names= catenoid cube disks infty inftybd marco moebius moebius2 moebiusbd para p
 # manu
 
 pngs= $(addsuffix .png, $(names))
-bigs= $(addsuffix -big.png, $(names))
+hds= $(addsuffix -hd.png, $(names))
 povs= $(addsuffix .pov, $(names))
 pss= $(addsuffix .ps, $(names))
 os= $(addsuffix .o, $(names))
@@ -20,8 +20,13 @@ all: $(povs) $(pngs)
 	mv film.pov $(basename $@).pov
 	rm film.ps
 
-%.png: %.pov
+%.png: %.pov Makefile
 	povray Width=640 Height=480 +Q11 +A0.2 +I$< +FN +O$@ +ua
+
+%-hd.png: %.pov
+	povray Width=4000 Height=3000 +Q11 +A0.2 +I$< +FN +O$@ +ua
+
+hd: $(hds)
 
 surf: 
 	make -C .. surf

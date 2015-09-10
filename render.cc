@@ -427,18 +427,30 @@ pov_ray::pov_ray(ostream &o,camera &v):vectorial_output(v) {
 
   *out<<"light_source{<0,0,10> color rgb <1,1,1>}\n";
 
-  *out<<"#include \"metals.inc\"\n";
-
+  // *out<<"#include \"metals.inc\"\n";
+  *out<<"#declare P_Chrome2   = color rgb <0.39, 0.41, 0.43>;\n\n";
+  
   *out<<
+#ifdef THIS_IS_OLD
     "#declare Color = texture {\n"
     "pigment{color rgbf <0.8,0.8,1,0.3>}\n"
     "finish{irid{0.25 thickness 0.7 turbulence 0.3}\n"
     "  ambient .4 phong 0.75}\n"
-    "}\n\n";
-  *out<<
+    "}\n\n"
     "#declare Wire = texture {\n"
     "pigment{P_Chrome2}\n"
-    "finish{ambient .4 phong 0.75}\n}\n\n";
+    "finish{ambient .4 phong 0.75}\n}\n\n"
+#else
+    "#declare Color = texture {\n"
+    "pigment{color rgbf <0.75,0.8,1.0,0.3>}\n"
+    "finish{irid{0.2 thickness 0.7 turbulence 0.6}\n"
+    "  ambient .6 phong 0.75}\n"
+    "}\n\n"
+    "#declare Wire = texture {\n"
+    "pigment{P_Chrome2}\n"
+    "finish{ambient 0 phong 0.75}\n}\n\n"
+#endif
+    ;
   *out<<"union{\n";
   *out<<"// plane { <0,0,1>, -5 pigment {color rgb <1,1,1>}\n"
     "// finish {ambient 0.5}}\n";
