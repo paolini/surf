@@ -279,7 +279,7 @@ void surf::serialize(ostream &out) const {
   }
 }
 
-
+/*
 surf *unserialize(istream &in, surf *S) {
   if (S==0) {
     S=new surf;
@@ -325,6 +325,7 @@ surf *unserialize(istream &in, surf *S) {
   }
   
 }
+*/
 
 int surf::n_vertices() const {
   int i=0;
