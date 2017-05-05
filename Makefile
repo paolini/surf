@@ -4,7 +4,7 @@ LNK=g++ -g -DVERSION=$(VERSION)
 
 CMP=$(LNK) -c
 
-modules = catenoid cube helicoid infty manu marco moebius para plateau retract spiral trefoil triple
+modules = catenoid cube helicoid infty manu marco moebius para plateau retract spiral trefoil triple tetra
 module_srcs = $(addsuffix .cc, $(modules))
 module_targets = $(addprefix borders/, $(module_srcs))
 
