@@ -1,5 +1,6 @@
 names= catenoid cube disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd helicoid
 # manu
+# tetra agiunto, ma bisogna sistemare il punto di vista
 
 pngs= $(addsuffix .png, $(names))
 hds= $(addsuffix -hd.png, $(names))

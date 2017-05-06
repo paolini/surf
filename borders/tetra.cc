@@ -45,9 +45,11 @@ static void init_border(surf &S)
   double hminus;
   double hin;
 
+  cout << "Value of h: ";
+  cin >> h;
   tau = 2 - sqrt(3.0);
   //h = 3;
-  h = 6;
+  //h = 6;
   //h = 16;
 
   htau = h*tau;
