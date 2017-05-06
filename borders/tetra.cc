@@ -27,20 +27,27 @@ static void quadr(surf &S, vertex *a,vertex *b, vertex *c,vertex *d)
   S.new_triangle(a,b,c);
   S.new_triangle(a,c,d);
 }
+static void pentag(surf &S, vertex *a,vertex *b, vertex *c,vertex *d, vertex *e)
+{
+  S.new_triangle(a,b,c);
+  S.new_triangle(a,c,d);
+  S.new_triangle(a,d,e);
+}
 
 static void init_border(surf &S)
 {
   double tau, h;
   int i,j;
   vertex *p[16];
-  vertex *q[4];
+  vertex *q[13];
   double htau;
   double hplus;
   double hminus;
   double hin;
 
   tau = 2 - sqrt(3.0);
-  h = 3;
+  //h = 3;
+  h = 6;
   //h = 16;
 
   htau = h*tau;
@@ -56,8 +63,8 @@ static void init_border(surf &S)
    */
   p[0] = S.new_vertex(vector3(h, -1.0, 0.0));
   p[1] = S.new_vertex(vector3(h, +1.0, 0.0));
-  p[2] = S.new_vertex(vector3(-h, 0.0, -1.0));
-  p[3] = S.new_vertex(vector3(-h, 0.0, +1.0));
+  p[2] = S.new_vertex(vector3(-h, 0.0, +1.0));
+  p[3] = S.new_vertex(vector3(-h, 0.0, -1.0));
 
   /*
    * i vertici del quadrato centrale, ord. lessicografico: z, y
@@ -97,10 +104,25 @@ static void init_border(surf &S)
   q[2] = S.new_vertex(vector3(-htau, 0.0, +hin));
   q[3] = S.new_vertex(vector3(-htau, 0.0, -hin));
 
-  //for (i=0;i<4;i++)
-  //  {
-  //    q[i]=S.new_vertex(vector3(0,(i/2-0.5)*(3-sqrt(3))/3.0,(i%2-0.5)*(3-sqrt(3))/3.0));
-  //  }
+  /*
+   * 4 punti medi dei lati del quadrato centrale
+   */
+  q[4] = S.new_vertex(vector3(0.0, 0.0, +0.5));
+  q[5] = S.new_vertex(vector3(0.0, +0.5, 0.0));
+  q[6] = S.new_vertex(vector3(0.0, 0.0, -0.5));
+  q[7] = S.new_vertex(vector3(0.0, -0.5, 0.0));
+
+  /*
+   * 2 punti medi per x = htau e due per x = -htau
+   */
+
+  q[8] = S.new_vertex(vector3(htau, 0.0, +hminus));
+  q[9] = S.new_vertex(vector3(htau, 0.0, -hminus));
+  q[10] = S.new_vertex(vector3(-htau, -hminus, 0.0));
+  q[11] = S.new_vertex(vector3(-htau, +hminus, 0.0));
+
+  /* l'origine */
+  q[12] = S.new_vertex(vector3(0.0, 0.0, 0.0));
 
   /* aletta orizz. di destra, poi sinistra */
   quadr (S, p[0], p[1], q[1], q[0]);
@@ -118,21 +140,30 @@ static void init_border(surf &S)
   S.new_triangle (p[3], q[3], p[15]);
 
   /* sezione verticale x=htau: 2 trapezi */
-  quadr (S, p[8], q[0], q[1], p[9]);
-  quadr (S, p[10], q[0], q[1], p[11]);
+  pentag (S, q[8], p[8], q[0], q[1], p[9]);
+  pentag (S, q[9], p[10], q[0], q[1], p[11]);
 
   /* sezione verticale x=-htau: 2 trapezi */
-  quadr (S, p[12], q[2], q[3], p[14]);
-  quadr (S, p[13], q[2], q[3], p[15]);
+  pentag (S, q[10], p[12], q[2], q[3], p[14]);
+  pentag (S, q[11], p[13], q[2], q[3], p[15]);
 
-  /* 4 trapezi appoggiati alle facce del tetraedri */
-  quadr (S, p[4], p[5], p[9], p[8]);
-  quadr (S, p[6], p[7], p[11], p[10]);
-  quadr (S, p[4], p[6], p[14], p[12]);
-  quadr (S, p[5], p[7], p[15], p[13]);
+  /*
+   * 4 trapezi appoggiati alle facce del tetraedri
+   * ciascuno diviso in due
+   */
+  quadr (S, p[4], q[4], q[8], p[8]); quadr (S, q[4], p[5], p[9], q[8]);
+  quadr (S, p[6], q[6], q[9], p[10]); quadr (S, q[6], p[7], p[11], q[9]);
+  quadr (S, p[4], q[7], q[10], p[12]); quadr (S, q[7], p[6], p[14], q[10]);
+  quadr (S, p[5], q[5], q[11], p[13]); quadr (S, q[5], p[7], p[15], q[11]);
 
-  /* infine il quadrato verticale centrale di raccordo */
-  quadr (S, p[4], p[5], p[7], p[6]);
+  /*
+   * infine il quadrato verticale centrale di raccordo
+   * diviso in quattro quadrati
+   */
+  quadr (S, p[4], q[4], q[12], q[7]);
+  quadr (S, p[5], q[5], q[12], q[4]);
+  quadr (S, p[7], q[6], q[12], q[5]);
+  quadr (S, p[6], q[7], q[12], q[6]);
 }
 
 
