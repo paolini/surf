@@ -44,18 +44,18 @@ static void init_border(surf &S)
   double hplus;
   double hminus;
   double hin;
+  char c;
 
-  cout << "Value of h (e.g. h=6): ";
+  cout << "Value of h (e.g. h=6, use a negative value to get the regular tetrahedron): ";
   cin >> h;
-  tau = 2 - sqrt(3.0);
   //h = 3;
   //h = 6;
   //h = 16;
-
-  htau = h*tau;
-  hplus = (1 + tau)/2.0;
-  hminus = (1 - tau)/2.0;
-  hin = hplus - hminus*3.0/(2*sqrt(2.0));
+  if (h < 0)
+    {
+      h = 1.0/sqrt(2.0);
+      cout << "Regular tetrahedron!\n";
+    }
 
   /*
    * l'ordinamento e' strano: la x e' ordinata in modo decrescente
@@ -67,6 +67,40 @@ static void init_border(surf &S)
   p[1] = S.new_vertex(vector3(h, +1.0, 0.0));
   p[2] = S.new_vertex(vector3(-h, 0.0, +1.0));
   p[3] = S.new_vertex(vector3(-h, 0.0, -1.0));
+
+  for (i=0;i<4;i++)
+    {
+      p[i]->border=1.0;
+      p[i]->next_border=p[i];
+    }
+
+  /* l'origine */
+  q[12] = S.new_vertex(vector3(0.0, 0.0, 0.0));
+
+  cout << "<C>onelike or <H>oled? ";
+  cin >> c;
+  if (tolower(c) == 'c')
+    {
+      S.new_triangle (p[0], p[1], q[12]);
+      S.new_triangle (p[0], p[2], q[12]);
+      S.new_triangle (p[0], p[3], q[12]);
+      S.new_triangle (p[1], p[2], q[12]);
+      S.new_triangle (p[1], p[3], q[12]);
+      S.new_triangle (p[2], p[3], q[12]);
+      return;
+    }
+  else if (tolower(c) != 'h')
+    {
+      cout << "Invalid choice, aborting\n";
+      exit (1);
+    }
+
+  tau = 2 - sqrt(3.0);
+
+  htau = h*tau;
+  hplus = (1 + tau)/2.0;
+  hminus = (1 - tau)/2.0;
+  hin = hplus - hminus*3.0/(2*sqrt(2.0));
 
   /*
    * i vertici del quadrato centrale, ord. lessicografico: z, y
@@ -92,7 +126,7 @@ static void init_border(surf &S)
   p[14] = S.new_vertex(vector3(-htau, -hminus, -hplus));
   p[15] = S.new_vertex(vector3(-htau, +hminus, -hplus));
 
-  for (i=0;i<16;i++)
+  for (i=4;i<16;i++)
     {
       p[i]->border=1.0;
       p[i]->next_border=p[i];
@@ -122,9 +156,6 @@ static void init_border(surf &S)
   q[9] = S.new_vertex(vector3(htau, 0.0, -hminus));
   q[10] = S.new_vertex(vector3(-htau, -hminus, 0.0));
   q[11] = S.new_vertex(vector3(-htau, +hminus, 0.0));
-
-  /* l'origine */
-  q[12] = S.new_vertex(vector3(0.0, 0.0, 0.0));
 
   /* aletta orizz. di destra, poi sinistra */
   quadr (S, p[0], p[1], q[1], q[0]);
