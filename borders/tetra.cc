@@ -77,7 +77,7 @@ static void init_border(surf &S)
   /* l'origine */
   q[12] = S.new_vertex(vector3(0.0, 0.0, 0.0));
 
-  cout << "<C>onelike or <H>oled? ";
+  cout << "<C>onelike, <H>oled, <L>ong edges only? ";
   cin >> c;
   if (tolower(c) == 'c')
     {
@@ -87,6 +87,14 @@ static void init_border(surf &S)
       S.new_triangle (p[1], p[2], q[12]);
       S.new_triangle (p[1], p[3], q[12]);
       S.new_triangle (p[2], p[3], q[12]);
+      return;
+    }
+  if (tolower(c) == 'l')
+    {
+      S.new_triangle (p[0], p[2], q[12]);
+      S.new_triangle (p[2], p[1], q[12]);
+      S.new_triangle (p[1], p[3], q[12]);
+      S.new_triangle (p[3], p[0], q[12]);
       return;
     }
   else if (tolower(c) != 'h')
