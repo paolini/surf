@@ -353,7 +353,8 @@ void pov_ray::out_triangle(triangle &t, int print_mode) {
 	out_vector3(1.0/(double)k*n);
 	*out<<" ";
       }
-    *out<<" texture {Color}}\n";
+    // *out<<" texture {Color}}\n";
+    *out<<"}\n";
   }
   
   if (print_mode!=1) {
@@ -457,6 +458,7 @@ pov_ray::pov_ray(ostream &o,camera &v):vectorial_output(v) {
 }
 pov_ray::~pov_ray()
 {
+  *out<<"texture {Color}\n";
   *out<<"}\n\n//END\n";
 }
 
