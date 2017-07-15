@@ -14,6 +14,7 @@ using namespace std;
 #include "vertex.h"
 #include "render.h"
 #include "border.h"
+#include "surf.h"
 
 #ifndef VERSION
 #error La versione va` definita nel Makefile
@@ -454,6 +455,83 @@ int dl_init(char *name) {
 }
 */
 
+string main_commands[][2] = {
+  {"c", "camera"},
+  {"t", "triangulate"},
+  {"r", "evolve_triangulate"},
+  {"R", "evolve_traingulate_radius"},
+  {"?", "print_border"},
+  {"b", "triangulate_border"},
+  {"h", "harmonic"},
+  {"E", "evolve_viscosity"},
+  {"e", "evolve"},
+  {"l", "vertex_list"},
+  {"L", "triangle_list"},
+  {"a", "auto_zoom"},
+  {"k", "check"},
+  {"c", "camera"},
+  {"p", "write_txt"},
+  {"w", "write_border_ps"},
+  {"m", "print_mode"},
+  {"O", "write_pov"},
+  {"P", "write_ps"},
+  {"G", "write_off"},
+  {"X", "quit"},
+  {"", ""}
+};
+
+string camera_commands[][2] = {
+  {"w", "linewidth"},
+  {"p", "viewpoint"},
+  {"l", "look_at"},
+  {"a", "advance"},
+  {"+", "zoom_in"},
+  {"-", "zoom_out"},
+  {"h", "light"},
+  {"f", "film_size"},
+  {"x", "exit"},
+  {"x", "q"},
+  {"", ""}
+};
+
+char command_prompt(const char* prompt, string commands[][2], bool case_sensitive) {
+  string cmd;
+
+  for(;;) {
+    cout << prompt;
+    getline(cin, cmd);
+    cmd.erase(0, cmd.find_first_not_of(" \n\r\t"));
+    cmd.erase(cmd.find_last_not_of(" \n\r\t")+1);
+    if (!cin) {
+      cin.clear();
+      cerr<<"Error reading input!\n";
+      abort();
+    }
+    
+    if (cmd.size() == 0) continue;
+
+    if (!case_sensitive) {
+      for (int i=0; i<cmd.size(); ++i) {
+	cmd[i] = tolower(cmd[i]);
+      }
+    }
+    
+    for (int i=0; commands[i][0] != ""; ++i) {
+      if (cmd == commands[i][1] || cmd == commands[i][0]) {
+	return commands[i][0][0];
+      }
+    }
+
+    cout << "comando sconosciuto '" << cmd << "'..." << endl;
+    cin.clear();
+    cout << "comandi:\n" << endl;
+    for (int i=0; commands[i][0]!=""; i++) {
+      cout<< commands[i][0] << ": " << commands[i][1] << endl;
+    }
+    cout.flush();
+  }
+}
+
 int main(int argc, char *argv[]) {
   surf S;
   int i;
@@ -508,17 +586,7 @@ int main(int argc, char *argv[]) {
     cout<<"Diametro triangolazione: "<<diameter(S)<<"\n";
     cout<<"Camera: "<<view<<"\n";
 
-    string cmd;
-    
-    cin>>cmd;
-    
-    if (!cin) {
-      cin.clear();
-      cerr<<"Error reading input!\n";
-      continue;
-    }
-
-    c=cmd[0];
+    c = command_prompt("surf> ", main_commands, true);
 
     interrupt=0;
 
@@ -601,8 +669,7 @@ int main(int argc, char *argv[]) {
 	  vector3 v;
 	  do
 	    {
-	      cout<<"Camera: "<<view<<"\n";
-	      cin>>c;
+	      c = command_prompt("surf camera> ", camera_commands); 
 	      switch(c)
 		{
 		case 'w':
@@ -641,7 +708,7 @@ int main(int argc, char *argv[]) {
 		  view.film(w,h);
 		  break;
 		}
-	    }while (c!='q' && c!='x' && c!='X');
+	    } while (c != 'x');
 	}
 	c='z';
 	break;
@@ -706,9 +773,8 @@ int main(int argc, char *argv[]) {
 	cout<<"Exiting...\n";
 	break;
       default:
-	cout<<"comando sconosciuto '"<<cmd<<"'...";
-	cout.flush();
-	break;
+	cout << "comando sconosciuto [" << c << "] " << int(c) << endl; 
+	assert(false);
       }
   }
   return 0;

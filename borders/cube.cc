@@ -2,6 +2,7 @@
 
 #include "../vector3.h"
 #include "../border.h"
+#include "../surf.h"
 
 /****************************/
 /* definizione del contorno */
@@ -32,9 +33,15 @@ static void init_border(surf &S)
   int i,j;
   vertex *p[8];
   vertex *q[4];
-  char c;
-  cout << "<S>imply connected, <N>on-simply connected? ";
-  cin >> c;
+
+  string commands[][2] = {
+    {"s", "simply_connected"},
+    {"n", "non_simply_connected"},
+    {"", ""}
+  };
+  
+  char c = command_prompt("<S>imply connected, <N>on-simply connected? ", commands);
+
   for (i=0;i<8;i++)
     {
       p[i]=S.new_vertex(vector3((i/4)-0.5,(i%4)/2-0.5,i%2-0.5));
@@ -54,7 +61,7 @@ static void init_border(surf &S)
    }
   for (i=0;i<4;i++)
     S.new_triangle(p[i],p[i+4],q[i]);
-  if (tolower(c) == 's')
+  if (c == 's')
     quadr(S,q[0],q[1],q[3],q[2]);
 }
 

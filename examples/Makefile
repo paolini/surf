@@ -1,6 +1,6 @@
-names= catenoid cube disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd helicoid
+names= catenoid cube cubehole tetra disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd helicoid
 # manu
-# tetra agiunto, ma bisogna sistemare il punto di vista
+# tetra, cubehole: sistemare il punto di vista
 
 pngs= $(addsuffix .png, $(names))
 hds= $(addsuffix -hd.png, $(names))
@@ -21,7 +21,7 @@ all: $(povs) $(pngs)
 	mv film.pov $(basename $@).pov
 	rm film.ps
 
-%.png: %.pov Makefile
+%.png: %.pov
 	povray Width=640 Height=480 +Q11 +A0.2 +I$< +FN +O$@ +ua
 
 %-hd.png: %.pov
