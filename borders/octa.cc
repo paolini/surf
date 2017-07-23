@@ -67,34 +67,37 @@ static void init_border(surf &S)
     S.new_triangle (p[1], p[2], p[5]);
     S.new_triangle (p[1], p[3], p[4]);
   }
-  if (tolower (c) == 'b') /* superficie skew */
+  if (tolower (c) == 'b') /* tre facce aperte */
   {
-    q[0]=S.new_vertex(vector3(0.,0.5,0.));
-    q[1]=S.new_vertex(vector3(0.,-0.5,0.));
-    q[2]=S.new_vertex(vector3(0.,0.,0.5));
-    q[3]=S.new_vertex(vector3(0.,0.,-0.5));
+    q[0]=S.new_vertex(vector3(1./3,1./3,0.));   // (p[0]+p[2])/3 = aletta02
+    q[1]=S.new_vertex(vector3(0.,1./3,1./3));   // aletta24
+    q[2]=S.new_vertex(vector3(1./3,0.,1./3));   // aletta40
+
+    /* alette */
+
     S.new_triangle (p[0], p[2], q[0]);
-    S.new_triangle (p[0], p[4], q[2]);
+    S.new_triangle (p[2], p[4], q[1]);
+    S.new_triangle (p[4], p[0], q[2]);
+
+    /* top triangle */
+
     S.new_triangle (p[0], q[0], q[2]);
+    S.new_triangle (p[2], q[1], q[0]);
+    S.new_triangle (p[4], q[2], q[1]);
+    S.new_triangle (q[0], q[1], q[2]);
 
-    S.new_triangle (p[0], p[3], q[1]);
-    S.new_triangle (p[0], p[5], q[3]);
-    S.new_triangle (p[0], q[1], q[3]);
+    /* positive trias */
 
-    S.new_triangle (p[1], p[2], q[0]);
-    S.new_triangle (p[1], p[5], q[3]);
-    S.new_triangle (p[1], q[0], q[3]);
+    S. new_triangle (p[5], p[2], q[0]);
+    S. new_triangle (p[5], q[0], p[0]);
+    S. new_triangle (p[1], p[4], q[1]);
+    S. new_triangle (p[1], q[1], p[2]);
+    S. new_triangle (p[3], p[0], q[2]);
+    S. new_triangle (p[3], q[2], p[4]);
 
-    S.new_triangle (p[1], p[3], q[1]);
-    S.new_triangle (p[1], p[4], q[2]);
-    S.new_triangle (p[1], q[1], q[2]);
+    /* bottom triangle */
 
-    quadr(S,p[2],p[4],q[2],q[0]);
-    quadr(S,p[4],p[3],q[1],q[2]);
-    quadr(S,p[3],p[5],q[3],q[1]);
-    quadr(S,p[5],p[2],q[0],q[3]);
-
-    quadr(S,q[0],q[2],q[1],q[3]);
+    S.new_triangle (p[1], p[3], p[5]);
   }
   if (tolower (c) == 'c') /* fascia laterale */
   {
@@ -137,6 +140,35 @@ static void init_border(surf &S)
     quadr(S,p[4],p[2],q[3],q[4]);
     quadr(S,p[0],p[4],q[5],q[0]);
     quadr(S,p[2],p[0],q[1],q[2]);
+  }
+  if (tolower (c) == 'd') /* superficie skew */
+  {
+    q[0]=S.new_vertex(vector3(0.,0.5,0.));
+    q[1]=S.new_vertex(vector3(0.,-0.5,0.));
+    q[2]=S.new_vertex(vector3(0.,0.,0.5));
+    q[3]=S.new_vertex(vector3(0.,0.,-0.5));
+    S.new_triangle (p[0], p[2], q[0]);
+    S.new_triangle (p[0], p[4], q[2]);
+    S.new_triangle (p[0], q[0], q[2]);
+
+    S.new_triangle (p[0], p[3], q[1]);
+    S.new_triangle (p[0], p[5], q[3]);
+    S.new_triangle (p[0], q[1], q[3]);
+
+    S.new_triangle (p[1], p[2], q[0]);
+    S.new_triangle (p[1], p[5], q[3]);
+    S.new_triangle (p[1], q[0], q[3]);
+
+    S.new_triangle (p[1], p[3], q[1]);
+    S.new_triangle (p[1], p[4], q[2]);
+    S.new_triangle (p[1], q[1], q[2]);
+
+    quadr(S,p[2],p[4],q[2],q[0]);
+    quadr(S,p[4],p[3],q[1],q[2]);
+    quadr(S,p[3],p[5],q[3],q[1]);
+    quadr(S,p[5],p[2],q[0],q[3]);
+
+    quadr(S,q[0],q[2],q[1],q[3]);
   }
 }
 
