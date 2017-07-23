@@ -19,10 +19,13 @@ vector3.o: vector3.cc vector3.h
 render.o: render.cc render.h
 	$(CMP) $<
 
-vertex.o: vertex.cc vertex.h
+vertex.o: vertex.cc vertex.h surf.h
 	$(CMP) $<
 
-surf.o: surf.cc vector3.h
+surf.o: surf.cc vector3.h surf.h
+	$(CMP) $<
+
+main.o: main.cc surf.h
 	$(CMP) $<
 
 border.o: border.cc border.h
@@ -31,9 +34,9 @@ border.o: border.cc border.h
 piece.o: piece.cc piece.h
 	$(CMP) $<
 
-surf: surf.o vector3.o render.o vertex.o border.o piece.o $(module_targets)
-	echo targets: $(module_targets)
-	$(LNK) $^ -rdynamic -ldl -o $@
+surf: main.o surf.o vector3.o render.o vertex.o border.o piece.o $(module_targets)
+	@echo targets: $(module_targets)
+	$(LNK) $^ -o $@
 
 clean::
 	@rm -f *~

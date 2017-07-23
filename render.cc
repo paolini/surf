@@ -2,13 +2,11 @@
 #include <math.h>
 
 #include "render.h"
+#include "surf.h"
 
-extern int n_triangle(surf &);
-//extern triangle* S.first_triangle;
 extern int out_of_memory(void);
-extern double diameter(surf &);
 
-double linewidth=15;
+double vectorial_output::linewidth=15;
 
 // COLOR
 
@@ -483,7 +481,7 @@ void vectorial_output::print(surf &S,int print_mode)
   triangle *t;
   double x0,x1,y0,y1,x,d;
   cout<<"printing symplex...\n";
-  n=n_triangle(S);
+  n = S.n_triangle();
   ::pv=pv(); 
   cout <<"pv="<<::pv<<"\n";
   dir=direction();
@@ -497,7 +495,7 @@ void vectorial_output::print(surf &S,int print_mode)
   qsort(list,n,sizeof(triangle *),triangle_compare);
   cout<<" ...done.\n";
 
-  d=diameter(S);
+  d=S.diameter();
   for (i=0,j=0;i<n;i++) {
     if (print_mode==0) {
       for (;j<n && i<n 

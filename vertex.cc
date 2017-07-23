@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <cassert>
 
-#include "vertex.h"
+#include "surf.h"
 
 triangle_list::triangle_list(triangle *t,triangle_list *l) {
   first=t;

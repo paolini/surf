@@ -1,7 +1,7 @@
 #include <map>
 #include <string>
 
-#include "vertex.h"
+#include "surf.h"
 
 struct Border {
   typedef vector3 border_function_fun(double);

@@ -1,10 +1,5 @@
-#include <iostream>
-#include <fstream>
 #include <cmath>
 #include <cstdlib>
-#include <signal.h>
-#include <dlfcn.h>
-#include <unistd.h>
 #include <string>
 #include <cassert>
 
@@ -13,7 +8,6 @@ using namespace std;
 #include "vector3.h"
 #include "vertex.h"
 #include "render.h"
-#include "border.h"
 #include "surf.h"
 
 #ifndef VERSION
@@ -22,22 +16,18 @@ using namespace std;
 
 #define MYNAME "surf"
 
-int  print_mode=2;
+const double surf::evolve_factor = 0.85;
 
-double viscosity=(0.125);
-double epsilon=0.00001;
-
-int interrupt=0;
-
-extern double linewidth;
+int surf::interrupt=0;
 
 void out_of_memory(void) {
 cerr<<"Memoria esaurita... quitting\n";
 exit(1);
 }
 
-void check(surf &S)
+void surf::check()
 {
+  surf &S = *this;
   int status=1;
   triangle *t;
   vertex *p;
@@ -54,7 +44,8 @@ void check(surf &S)
     cerr<<"Check OK!\n";
 }
 
-int n_triangle(surf &S) {
+int surf::n_triangle() {
+ surf &S = *this;
  int i;
  triangle *p;
  for (i=0,p=S.first_triangle;p!=NULL;i++,p=p->next);
@@ -67,8 +58,9 @@ ostream& operator<<(ostream& c,triangle &t)
 return c<<"{"<<*t.v[0]<<","<<*t.v[1]<<","<<*t.v[2]<<"}";
 }
 
-double area(surf &S)
+double surf::area()
 {
+  surf &S = *this;
   triangle *p;
   double a=0;
   for (p=S.first_triangle;p!=NULL;p=p->next)
@@ -76,16 +68,15 @@ double area(surf &S)
   return a;
 }
 
-vertex* new_border_vertex(surf &S, vertex *v,vertex *w);
-
-int side_triangulate(surf &S, vertex *v, vertex *w) {
+int surf::side_triangulate(vertex *v, vertex *w) {
+  surf &S = *this; 
   triangle_list *p,*q;
   static triangle *found[10];
   int nfound=0;
   int n,i;  
   vertex *x,*z;
   
-  x=new_border_vertex(S,v,w);
+  x=S.new_border_vertex(v,w);
   for (p=v->list;p!=NULL;p=p->next)
     {
       for (q=w->list;q!=NULL;q=q->next)
@@ -112,8 +103,9 @@ int side_triangulate(surf &S, vertex *v, vertex *w) {
   return n;
 }
 
-int side_triangulate(surf &S,triangle *t,double radius)
+int surf::side_triangulate(triangle *t,double radius)
 {
+  surf &S = *this;
   double l0,l1,l2;
   l0=abs(*(t->v[1])-*(t->v[2]));
   l1=abs(*(t->v[0])-*(t->v[2]));
@@ -124,13 +116,13 @@ int side_triangulate(surf &S,triangle *t,double radius)
 	{
 	  if (l2>radius)
 	    {
-	    side_triangulate(S,t->v[0],t->v[1]);
+	    S.side_triangulate(t->v[0],t->v[1]);
 	    return 1;
 	    }
 	}
       else if (l0>radius)
 	{
-	side_triangulate(S,t->v[1],t->v[2]);
+	S.side_triangulate(t->v[1],t->v[2]);
 	return 1;
 	}
     }
@@ -140,13 +132,13 @@ int side_triangulate(surf &S,triangle *t,double radius)
 	{
 	  if(l1>radius)
 	    {
-	      side_triangulate(S,t->v[0],t->v[2]);
+	      S.side_triangulate(t->v[0],t->v[2]);
 	      return 1;
 	    }
 	}
       else if (l0>radius)
 	{
-	side_triangulate(S,t->v[1],t->v[2]);
+	S.side_triangulate(t->v[1],t->v[2]);
 	return 1;
 	}
     } 
@@ -155,7 +147,8 @@ int side_triangulate(surf &S,triangle *t,double radius)
   return 0;
 }
 
-int border_side_triangulate(surf &S, triangle *t,double radius) {
+int surf::border_side_triangulate(triangle *t,double radius) {
+  surf &S = *this;
   double l0,l1,l2;
   l0=abs(*(t->v[1])-*(t->v[2]));
   l1=abs(*(t->v[0])-*(t->v[2]));
@@ -166,13 +159,13 @@ int border_side_triangulate(surf &S, triangle *t,double radius) {
 	{
 	  if (l2>radius && (t->v[0]->next_border==t->v[1] || t->v[1]->next_border==t->v[0]))
 	    {
-	      side_triangulate(S,t->v[0],t->v[1]);
+	      S.side_triangulate(t->v[0],t->v[1]);
 	      return 1;
 	    }
 	}
       else if (l0>radius && (t->v[1]->next_border==t->v[2] || t->v[2]->next_border==t->v[1]))
 	{
-	side_triangulate(S,t->v[1],t->v[2]);
+	S.side_triangulate(t->v[1],t->v[2]);
 	return 1;
 	}
     }
@@ -182,25 +175,26 @@ int border_side_triangulate(surf &S, triangle *t,double radius) {
 	{
 	  if(l0>radius)
 	    {
-	      side_triangulate(S,t->v[0],t->v[2]);
+	      S.side_triangulate(t->v[0],t->v[2]);
 	      return 1;
 	    }
 	}
       else if (l1>radius && (t->v[1]->next_border==t->v[2] || t->v[2]->next_border==t->v[1]))
 	{
-	side_triangulate(S,t->v[1],t->v[2]);
+	S.side_triangulate(t->v[1],t->v[2]);
 	return 1;
 	}
     } 
   return 0;
 }
-#define evolve_factor 0.85
+
 double max(double x,double y)
 {
   return x>y?x:y;
 }
 
-double diameter(surf &S) {
+double surf::diameter() {
+  surf &S = *this;
   double res=0.0,x;
   int i;
   triangle *t;
@@ -214,13 +208,14 @@ double diameter(surf &S) {
   return res;
 }
 
-void side_triangulate(surf &S, double radius,int border=0)
+void surf::side_triangulate(double radius,int border)
 {
+  surf &S = *this;
   vertex *p;
   triangle_list *t;
   double a,b,c,r;
   int done;
-  for (r=max(radius,evolve_factor*diameter(S))
+  for (r=max(radius,evolve_factor*S.diameter())
 	 ;r>=radius && !interrupt
 	 ;r=(r==radius)?-1:max(r*evolve_factor,radius))
     {    
@@ -232,8 +227,8 @@ void side_triangulate(surf &S, double radius,int border=0)
 	  {
 	    for (t=p->list;t!=NULL;)
 	      {
-		if (border?border_side_triangulate(S,t->first,r)
-		    :side_triangulate(S,t->first,r))
+		if (border?S.border_side_triangulate(t->first,r)
+		    :S.side_triangulate(t->first,r))
 		  {
 		    t=NULL;
 		    done=0;
@@ -248,7 +243,8 @@ if (done)
     cout<<"...done!\n";
 }
 
-triangle* center_triangulate(surf &S, triangle *t) {
+triangle* surf::center_triangulate(triangle *t) {
+  surf &S = *this;
   triangle *s;
   vertex *c;
   c=S.new_vertex((1.0/3.0)*(*(t->v)[0]+*(t->v)[1]+*(t->v)[2]));
@@ -259,20 +255,23 @@ triangle* center_triangulate(surf &S, triangle *t) {
   S.remove(t);
   return s;
 }	
-int n_vertex(surf &S)
+int surf::n_vertex()
  {
+ surf &S = *this;
  int i;
  vertex *p;
  for (i=0,p=S.first_vertex;p!=NULL;i++,p=p->next);
  return i;
  }
-void center_triangulate(surf &S) {
- triangle *t;
- for (t=S.first_triangle;t!=NULL;t=center_triangulate(S,t));
+void surf::center_triangulate() {
+  surf &S = *this;
+  triangle *t;
+  for (t=S.first_triangle;t!=NULL;t=S.center_triangulate(t));
  }
 
-void harmonic(surf &S,double eps=-1.0)
+void surf::harmonic(double eps)
 {
+  surf &S = *this;
   double a;
   vertex *p;
   static double epsilon=0.00001;
@@ -280,30 +279,32 @@ void harmonic(surf &S,double eps=-1.0)
   cout<<"Harmonic... epsilon="<<epsilon<<"\n";
   do
     {
-      a=area(S);
+      a=S.area();
       for (p=S.first_vertex;p!=NULL;p=p->next)
 	{
 	  p->harmonic();
 	}
-    }while (fabs(a-area(S))>epsilon && !interrupt);
+    }while (fabs(a-S.area())>epsilon && !interrupt);
   cout<<" ...done\n";
 }
-double evolve(surf &S,double eps=-1.0,double v=-1)
+double surf::evolve(double eps, double v)
 {
+  surf &S = *this;
   vertex *p;
   double a,b;
-  static double viscosity=0.125,epsilon=0.000001;
+  static double viscosity=0.125;
+  static double epsilon=0.000001;
   if (v>0) viscosity=v;
   else v=viscosity;
   if (eps>=0) epsilon=eps;
   cout<<"Evolving... epsilon="<<epsilon<<"visco="<<viscosity<<" ";
-  b=area(S);
+  b=S.area();
   do
     {
       a=b;
       for (p=S.first_vertex;p!=NULL;p=p->next)
 	p->evolve(v);
-      b=area(S);
+      b=S.area();
       if (b>a)
 	{
 	  v/=2;
@@ -314,27 +315,29 @@ double evolve(surf &S,double eps=-1.0,double v=-1)
     cout<<"done.\n";
   return b;
 }
-void evolve_triangulate(surf &S, double err,double radius=-1)
+void surf::evolve_triangulate(double err, double radius)
 {
+  surf &S = *this;
   double a,b;
   double r;
   if (radius==-1)
-    r=radius=diameter(S);
+    r=radius=S.diameter();
   else
-    r=diameter(S);
-  b=area(S);
+    r=S.diameter();
+  b=S.area();
   do
     {
       r=r*evolve_factor;
       if (r<radius) r=radius;
       a=b;
-      side_triangulate(S,r);
-      b=evolve(S);      
+      S.side_triangulate(r);
+      b=S.evolve(); 
       cout<<"TOTAL ERROR: "<<a-b<<"\n\n";
-    }while ((fabs(b-a)>err || diameter(S)>radius) && !interrupt);
+    }while ((fabs(b-a)>err || S.diameter()>radius) && !interrupt);
 }
-void vertex_list(surf &S)
+void surf::print_vertex_list()
 {
+  surf &S = *this;
   vertex *p;
   for (p=S.first_vertex;p!=NULL;p=p->next)
     {
@@ -344,438 +347,13 @@ void vertex_list(surf &S)
       cout<<"\n";
     }
 }
-void triangle_list(surf &S)
+void surf::print_triangle_list()
 {
-triangle *p;
-for (p=S.first_triangle;p!=NULL;p=p->next)
-  {
-    cout<<*p<<" (area="<<p->area()<<")\n";
-  }
-}
-
-/*********Gestione della grafica**************/
-
-
-/***************** End *****************/
-void auto_zoom(surf &S,camera &view) 
-{
-  double x0,x1,y0,y1,x;
-  triangle* t;
-  int j;
-  
-  x0=x1=view.X(*(t->v[0]));
-  y0=y1=view.Y(*(t->v[0]));
-  for (t=S.first_triangle;t!=NULL;t=t->next)
+  surf &S = *this;
+  triangle *p;
+  for (p=S.first_triangle;p!=NULL;p=p->next)
     {
-      for (j=0;j<3;j++)
-	{
-	  x=view.X(*(t->v[j]));
-	  if (x<x0) x0=x;
-	  if (x>x1) x1=x;
-	  x=view.Y(*(t->v[j]));
-	  if (x<y0) y0=x;
-	  if (x>y1) y1=x;
-	}
+      cout<<*p<<" (area="<<p->area()<<")\n";
     }
-  view.film(2*(x1>-x0?x1:-x0),2*(y1>-y0?y1:-y0),1); // resize film
 }
 
-
-struct  sigaction Action;
-void handler(int a)
-{
-  if (interrupt)
-    {
-      cout<<"Interrupt: exiting...\n";
-      exit(0);
-    }
-  interrupt=1;
-}
-
-vector3 (*dl_border_function)(double);
-vertex* (*dl_new_border_vertex)(surf &S, vertex *v,vertex*w);
-void (*dl_init_border)(surf &);
-
-Border *selected_border = 0;
-
-void init_border(surf &S) {
-  selected_border->init_border(S);
-}
-
-vector3 border_function(double x) {
-  return selected_border->border_function(x);
-}
-
-vertex* new_border_vertex(surf &S,vertex *v, vertex *w) {
-  return selected_border->new_border_vertex(S,v,w);
-}
-
-/*
-int dl_init(char *name) {
-  void *dl;
-  char *err;
-  char filename[256];
-
-  void (*dl_surf_get)(void (**ib)(surf &),
-		      vector3 (**bf)(double),
-		      vertex * (**nbv)(surf &,vertex*, vertex*));
-
-  if (name[0]=='/') {
-    strcpy(filename,"");
-  } else {
-    getcwd(filename,sizeof(filename));
-    if (strlen(name)+strlen(filename)+2>= sizeof(filename)) {
-      cerr<<"filename too long\n";
-      abort();
-    }
-    strcat(filename,"/");
-  }
-  strcat(filename,name);
-  
-  if (!(dl=dlopen(filename,RTLD_NOW))) goto error;
-  
-  if ( (void *) dl_surf_get=dlsym(dl,"dl_surf_get")) {
-    (*dl_surf_get)(&dl_init_border,
-		   &dl_border_function,
-		   &dl_new_border_vertex);
-    return 1;
-  } else { // vecchio metodo...
-    if (!((void *)dl_border_function=dlsym(dl,"border_function__Fd"))) 
-      goto error;
-    if (!((void *)dl_new_border_vertex=dlsym(dl,"new_border_vertex__FP6vertexT0"))) 
-    goto error;
-    if (!((void *)dl_init_border=dlsym(dl,"init_border__Fv"))) goto error;
-  
-    return 1;
-  }
- error:
-  cerr<<"dlerror: "<<dlerror()<<"\n";
-  cerr<<"opening file: "<<filename<<"\n";
-  abort();
-}
-*/
-
-string main_commands[][2] = {
-  {"c", "camera"},
-  {"t", "triangulate"},
-  {"r", "evolve_triangulate"},
-  {"R", "evolve_traingulate_radius"},
-  {"?", "print_border"},
-  {"b", "triangulate_border"},
-  {"h", "harmonic"},
-  {"E", "evolve_viscosity"},
-  {"e", "evolve"},
-  {"l", "vertex_list"},
-  {"L", "triangle_list"},
-  {"a", "auto_zoom"},
-  {"k", "check"},
-  {"c", "camera"},
-  {"p", "write_txt"},
-  {"w", "write_border_ps"},
-  {"m", "print_mode"},
-  {"O", "write_pov"},
-  {"P", "write_ps"},
-  {"G", "write_off"},
-  {"X", "quit"},
-  {"", ""}
-};
-
-string camera_commands[][2] = {
-  {"w", "linewidth"},
-  {"p", "viewpoint"},
-  {"l", "look_at"},
-  {"a", "advance"},
-  {"+", "zoom_in"},
-  {"-", "zoom_out"},
-  {"h", "light"},
-  {"f", "film_size"},
-  {"x", "exit"},
-  {"x", "q"},
-  {"", ""}
-};
-
-char command_prompt(const char* prompt, string commands[][2], bool case_sensitive) {
-  string cmd;
-
-  for(;;) {
-    cout << prompt;
-    getline(cin, cmd);
-    cmd.erase(0, cmd.find_first_not_of(" \n\r\t"));
-    cmd.erase(cmd.find_last_not_of(" \n\r\t")+1);
-    if (!cin) {
-      cin.clear();
-      cerr<<"Error reading input!\n";
-      abort();
-    }
-    
-    if (cmd.size() == 0) continue;
-
-    if (!case_sensitive) {
-      for (int i=0; i<cmd.size(); ++i) {
-	cmd[i] = tolower(cmd[i]);
-      }
-    }
-    
-    for (int i=0; commands[i][0] != ""; ++i) {
-      if (cmd == commands[i][1] || cmd == commands[i][0]) {
-	return commands[i][0][0];
-      }
-    }
-
-    cout << "comando sconosciuto '" << cmd << "'..." << endl;
-    cin.clear();
-    cout << "comandi:\n" << endl;
-    for (int i=0; commands[i][0]!=""; i++) {
-      cout<< commands[i][0] << ": " << commands[i][1] << endl;
-    }
-    cout.flush();
-  }
-}
-
-int main(int argc, char *argv[]) {
-  surf S;
-  int i;
-  double vel=0.5;
-  double radius;
-  double a,b;
-  char c=' ';
-
-  Action.sa_handler=handler;
-  sigaction(SIGINT,&Action,NULL);
-
-  if (argc==2) {
-    string name = argv[1];
-    if (name == "--ask") {
-      cout<<"Enter border name:";
-      cin>>name;
-    }
-    if (Border::registry.find(name) != Border::registry.end()) {
-      selected_border = Border::registry[name];
-    } else {
-      cerr<<"invalid border name "<<name<<"\n";
-      cerr<<"registered borders:\n";
-      for (Border::Registry::const_iterator i=Border::registry.begin();i!=Border::registry.end();++i) {
-	cerr<< (i->first) << "\n";
-      }
-      abort();
-    }
-  } else {
-    cerr<<"no surface given\n";
-    abort();
-  }
-
-  camera view;
-  init_border(S);
-  view.adjust();
-  view.light(versor(vector3(-3,-2,5)));
-  view.pv(vector3(0,-6,3));
-  view.look_at(vector3(0,0,0));
-  view.up(vector3(0,0,1));
-  view.zoom(4.0);
-  for (i=0;c!='X';i++)
-    {
-    if (interrupt)
-      {
-	int n;
-	cout<<"Interrupt: press <X><Enter> to quit or Ctrl-C again.\n";
-	cin.clear();
-      }
-    cout<<"Passo n. "<<i<<"\n";
-    cout<<"Triangoli: "<<n_triangle(S)<<", vertici: "<<n_vertex(S);
-    cout<<". L'area totale e':"<<area(S)<<", ";
-    cout<<"Diametro triangolazione: "<<diameter(S)<<"\n";
-    cout<<"Camera: "<<view<<"\n";
-
-    c = command_prompt("surf> ", main_commands, true);
-
-    interrupt=0;
-
-    switch(c)
-      {
-      case 't':
-	cout<<"Enter radius: ";
-	cin>>radius;
-	cout<<"\n";
-	side_triangulate(S,radius);
-	break;
-      case 'r':
-	cout<<"Enter error: ";
-	cin>>a;
-	evolve_triangulate(S,a);
-	break;
-      case 'R':
-	cout<<"Enter error: ";
-	cin>>a;
-	cout<<"Enter radius: ";
-	cin >>radius;
-	evolve_triangulate(S,a,radius);
-	break;
-      case '?':
-	cout<<"Enter border parameter: ";
-	cin>>radius;
-	cout<<"Vector3 ("<<radius<<") = "<<border_function(radius)<<"\n";
-	break;
-      case 'b':
-	cout<<"Enter radius: ";
-	cin>>radius;
-	cout<<"\n";
-	side_triangulate(S,radius,1);
-	break;
-      case -1:
-	center_triangulate(S);
-	break;
-      case 'H':
-	cout<<"Error: ";
-	cin>>a;
-	harmonic(S,a);
-	break;
-      case 'h':
-	harmonic(S);
-	break;
-      case 'E':
-	cout<<"Viscosity: ";
-	cin>>a;
-	cout<<"Error: ";
-	cin>>b;
-	evolve(S,b,a);
-	break;
-	/*
-	  case 'i':
-	  implicit_evolve(1000);
-	  break;
-	  case 'I':
-	  implicit_evolve(0.001);
-	  break;
-	*/
-      case 'e':
-	evolve(S);
-	break;
-      case 'l':
-	vertex_list(S);
-	break;
-      case 'L':
-	triangle_list(S);
-	break;
-      case 'a':
-	cout<<"Automatic zoom... \n";
-	auto_zoom(S,view);
-	break;
-      case 'k':
-	check(S);
-	break;
-      case 'c':
-	cout<<"Move camera...\n";
-	{
-	  vector3 v;
-	  do
-	    {
-	      c = command_prompt("surf camera> ", camera_commands); 
-	      switch(c)
-		{
-		case 'w':
-		  cout<<"linewidth="<<linewidth<<"\n";
-		  cout<<"Enter linewidth: ";
-		  cin>>linewidth;
-		  break;
-		case 'p':
-		  cout<<"Enter PV: ";
-		  cin>>v;
-		  view.pv(v);
-		  break;
-		case 'l':
-		  cout<<"Look at: ";
-		  cin>>v;
-		  view.look_at(v);
-		  break;
-		case 'a':
-		  view.pv(view.pv()+vel*view.direction());
-		  break;
-		case '+':
-		  view.zoom(1.5);
-		  break;
-		case '-':
-		  view.zoom(1.0/1.5);
-		  break;
-		case 'h':
-		  cout<<"Light direction: ";
-		  cin>>v;
-		  view.light(v);
-		  break;
-		case 'f':
-		  double w,h;
-		  cout<<"width: "; cin>>w;
-		  cout<<"height: "; cin>>h;
-		  view.film(w,h);
-		  break;
-		}
-	    } while (c != 'x');
-	}
-	c='z';
-	break;
-      case 'p': {
-	  text_output txt(cout,view);
-	  cout<<"text bitmap: "<<txt<<"\n";
-	  txt.print(S,print_mode);
-	}
-      break;
-      case 'w':
-	cout<<"Printing border...\n";
-	cout<<"End : ";
-	cin>>b;
-	cout<<"Step : ";
-	cin>>radius;
-	{
-	  ofstream file("film.ps",ios::out);
-	  ps_output ps(file,view,20.0,27.0);
-	  vector3 v;
-	  for (a=radius;a<b;a+=radius)
-	    {
-	      ps.out_line(border_function(a),border_function(a-radius),linewidth*ps.scaling(border_function(a)),color(1,0,0));
-	    }
-	  cout<<"done!";
-	}
-	break;
-      case 'm':
-	{
-	  cout<<"Print mode: (0=border, 1=sup, 2=both)";
-	  cin>>print_mode;
-	}
-      break;
-      case 'O':
-	{
-	  const char *filename="film.pov";
-	  ofstream file (filename,ios::out);
-	  pov_ray ray(file,view);
-	  cout<<"Pov-ray: "<<ray<<"\n";
-	  ray.print(S,print_mode);
-	  cout<<"POV written on file "<<filename<<"\n";
-	}
-      break;
-      case 'P':
-	{
-	  const char *filename="film.ps";
-	  ofstream file(filename,ios::out);
-	  ps_output ps(file,view,20.0,27.0);
-	  cout<<"Postscript: "<<ps<<"\n";
-	  ps.print(S,print_mode);
-	  cout<<"PS written on file "<<filename<<"\n";
-	}
-	break;
-      case 'G':
-	{
-	  string filename("film.off");
-	  ofstream file(filename.c_str());
-	  S.geomview_off(file);
-	  cout<<"OFF written on file "<<filename<<"\n";
-	}
-	break;
-      case 'X':
-	cout<<"Exiting...\n";
-	break;
-      default:
-	cout << "comando sconosciuto [" << c << "] " << int(c) << endl; 
-	assert(false);
-      }
-  }
-  return 0;
-}

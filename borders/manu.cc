@@ -2,9 +2,8 @@
 
 #include "../vector3.h"
 #include "../border.h"
+#include "../surf.h"
 
-extern int side_triangulate(surf&,vertex *v, vertex *w);
-extern void side_triangulate(surf&,double radius,int border=0);
 
 static double depth=0.5;
 
@@ -208,7 +207,7 @@ static void init_border(surf &S)
   cout<<"h=";
   cin>>h;
   l=make(S,"EMANUEL");
-  side_triangulate(S,radius);
+  S.side_triangulate(radius);
   for (v=S.first_vertex;v!=NULL;v=v->next)
     {
       *(vector3*)v=transform(*v);

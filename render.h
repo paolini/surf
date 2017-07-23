@@ -92,6 +92,8 @@ public:
 
 class vectorial_output: public camera {
 public:
+  static double linewidth;
+  
   virtual void out_triangle(vector3,vector3,vector3,color)=0; 
   virtual void out_line(vector3,vector3,double width,color)=0;
   virtual void out_triangle(triangle &, int print_mode);
