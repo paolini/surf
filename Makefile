@@ -16,7 +16,7 @@ all: surf
 vector3.o: vector3.cc vector3.h
 	$(CMP) $<
 
-render.o: render.cc render.h
+render.o: render.cc render.h surf.h
 	$(CMP) $<
 
 vertex.o: vertex.cc vertex.h surf.h

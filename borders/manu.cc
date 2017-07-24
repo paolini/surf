@@ -196,7 +196,6 @@ static vector3 transform(vector3 v)
   
 static void init_border(surf &S)
 {
-  vertex *v;
   double radius;
   cout<<"radius=";
   cin>>radius;
@@ -208,10 +207,7 @@ static void init_border(surf &S)
   cin>>h;
   l=make(S,"EMANUEL");
   S.side_triangulate(radius);
-  for (v=S.first_vertex;v!=NULL;v=v->next)
-    {
-      *(vector3*)v=transform(*v);
-    }
+  S.transform_vertices(transform);
 }
 
 

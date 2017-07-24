@@ -78,7 +78,7 @@ static void init_border(surf &S)
   cin>>mode;
   if (mode)
     {
-      cout<<"Nastro di moubius\n";
+      cout<<"Nastro di moebius\n";
       for (i=0;i<3;i++)
 	{
 	  S.new_triangle(p[i],p[i+1],p[(i+4)%6]);

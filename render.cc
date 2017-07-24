@@ -4,8 +4,6 @@
 #include "render.h"
 #include "surf.h"
 
-extern int out_of_memory(void);
-
 double vectorial_output::linewidth=15;
 
 // COLOR
@@ -325,6 +323,8 @@ void pov_ray::out_triangle(triangle &t, int print_mode) {
   class triangle_list *l;
   vector3 n,N,n1;
   double d;
+
+  //  printf("pov_ray::out_triangle\n");
   
   if (print_mode!=0) {
     *out<<"smooth_triangle {";
@@ -478,19 +478,19 @@ void vectorial_output::print(surf &S,int print_mode)
 {
   int n,i,j;
   triangle **list; /*array con i puntatori ai triangoli da ordinare*/
-  triangle *t;
+  //  triangle *t;
   double x0,x1,y0,y1,x,d;
   cout<<"printing symplex...\n";
-  n = S.n_triangle();
+  n = S.n_triangles();
   ::pv=pv(); 
   cout <<"pv="<<::pv<<"\n";
   dir=direction();
   cout <<"direction="<<dir<<"\n";
   typedef triangle *triangle_ptr;
   list=new triangle_ptr[n];
-  for (t=S.first_triangle,i=0;i<n;t=t->next,i++)
-    list[i]=t;
-  if (list==NULL) out_of_memory();
+  i=0;
+  for (triangle_iterator t=S.triangle_begin();i<n;++t,i++)
+    list[i]=&*t;
   cout<<"Sorting triangles...\n";
   qsort(list,n,sizeof(triangle *),triangle_compare);
   cout<<" ...done.\n";
@@ -511,8 +511,7 @@ void vectorial_output::print(surf &S,int print_mode)
 }
 
 void pov_ray::print(surf &S,int print_mode) {
-  triangle *t;
-  for (t=S.first_triangle; t; t=t->next) {
+  for (triangle_iterator t=S.triangle_begin(); t!=S.triangle_end(); ++t) {
     out_triangle(*t,print_mode);
   }
 }
@@ -536,16 +535,15 @@ double intersection(triangle *t,vector3 ray) /*torna -1.0 se non interseca*/
 }
 color ray_color(surf &S,vector3 v)
 {
-  triangle *t;
   triangle *found;
   double dist=-1.0;
   double d;
-  for (t=S.first_triangle;t!=NULL;t=t->next)
+  for (triangle_iterator t=S.triangle_begin();t!=S.triangle_end();++t)
     {
-      d=intersection(t,v);
+      d=intersection(&*t,v);
       if (d>=0 && (d<dist || dist==-1.0))
 	{
-	  found=t;
+	  found=&*t;
 	  dist=d;
 	}
     }
