@@ -29,11 +29,8 @@ public:
   int n_vertices() const;
   int n_triangles() const {return ntriangles;};
   
-  surf(Border *border_);
+  surf();
   
-  vector3 border_function(double t);
-  vertex* new_border_vertex(vertex *v, vertex *w);
-    
   void remove(vertex *);
   void add(vertex *);
 
@@ -53,9 +50,6 @@ public:
     return t;
   };
   
-  void serialize(ostream &out) const;
-  static surf *unserialize(ostream &in, surf *here=0);
-
   void geomview_off(ostream &out=cout) const;
 
   void check();
@@ -80,10 +74,6 @@ public:
   void print_vertex_list();
   void print_triangle_list();
 
-  typedef vector3 transform_function(vector3);
-  
-  void transform_vertices(transform_function transform);
-  
   void auto_zoom(camera &view);
   
   static const double evolve_factor;
@@ -95,8 +85,11 @@ public:
   vertex_iterator vertex_begin() {return first_vertex;}
   vertex_iterator vertex_end() {return 0;}
   
+  virtual vector3 border_function(double)=0;
+  virtual vertex* new_border_vertex(vertex *v, vertex *w)=0;
+  virtual void init_border()=0;
+
 private:
-  Border *border;
   triangle *first_triangle;
   int ntriangles;
   vertex *first_vertex;

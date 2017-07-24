@@ -8,67 +8,71 @@
 /* definizione del contorno */
 /****************************/
 
-static vertex* new_border_vertex(surf &S, vertex *v,vertex *w)
-{
-  vertex *p;
-  p=S.new_vertex(0.5*(*v+*w));
-  if (v->border==1 && w->border==1)
-    {
-    p->border=1;
-    p->next_border=p;
-    }
-  return p;
-}
-static vector3 border_function(double )
-{
-	return vector3(0,0,0);
-}
-static void quadr(surf &S, vertex *a,vertex *b, vertex *c,vertex *d)
-{
-  S.new_triangle(a,b,c);
-  S.new_triangle(a,c,d);
-}
-static void init_border(surf &S)
-{
-  int i,j;
-  vertex *p[8];
-  vertex *q[4];
-
-  string commands[][2] = {
-    {"s", "simply_connected"},
-    {"n", "non_simply_connected"},
-    {"", ""}
-  };
+class Cube: public Border {
+public:
   
-  char c = command_prompt("<S>imply connected, <N>on-simply connected? ", commands);
+  vertex* new_border_vertex(vertex *v,vertex *w)
+  {
+    surf &S = *this;
+    vertex *p;
+    p=S.new_vertex(0.5*(*v+*w));
+    if (v->border==1 && w->border==1)
+      {
+	p->border=1;
+	p->next_border=p;
+      }
+    return p;
+  }
+  
+  vector3 border_function(double )
+  {
+    return vector3(0,0,0);
+  }
+  
+  void quadr(vertex *a,vertex *b, vertex *c,vertex *d)
+  {
+    surf &S = *this;
+    S.new_triangle(a,b,c);
+    S.new_triangle(a,c,d);
+  }
+  
+  void init_border()
+  {
+    surf &S = *this;
+    int i,j;
+    vertex *p[8];
+    vertex *q[4];
+    
+    string commands[][2] = {
+      {"s", "simply_connected"},
+      {"n", "non_simply_connected"},
+      {"", ""}
+    };
+    
+    char c = command_prompt("<S>imply connected, <N>on-simply connected? ", commands);
+    
+    for (i=0;i<8;i++)
+      {
+	p[i]=S.new_vertex(vector3((i/4)-0.5,(i%4)/2-0.5,i%2-0.5));
+	p[i]->border=1.0;
+	p[i]->next_border=p[i];
+      }
+    for (i=0;i<4;i++)
+      {
+	q[i]=S.new_vertex(vector3(0,(i/2-0.5)*(3-sqrt(3))/3.0,(i%2-0.5)*(3-sqrt(3))/3.0));
+      }
+    for (i=0;i<8;i+=4)
+      {
+	quadr(p[i],p[i+1],q[1],q[0]);
+	quadr(p[i+1],p[i+3],q[3],q[1]);
+	quadr(p[i+3],p[i+2],q[2],q[3]);
+	quadr(p[i+2],p[i],q[0],q[2]); 
+      }
+    for (i=0;i<4;i++)
+      S.new_triangle(p[i],p[i+4],q[i]);
+    if (c == 's')
+      quadr(q[0],q[1],q[3],q[2]);
+  }
+};
 
-  for (i=0;i<8;i++)
-    {
-      p[i]=S.new_vertex(vector3((i/4)-0.5,(i%4)/2-0.5,i%2-0.5));
-      p[i]->border=1.0;
-      p[i]->next_border=p[i];
-    }
-  for (i=0;i<4;i++)
-    {
-      q[i]=S.new_vertex(vector3(0,(i/2-0.5)*(3-sqrt(3))/3.0,(i%2-0.5)*(3-sqrt(3))/3.0));
-    }
-  for (i=0;i<8;i+=4)
-    {
-      quadr(S,p[i],p[i+1],q[1],q[0]);
-      quadr(S,p[i+1],p[i+3],q[3],q[1]);
-      quadr(S,p[i+3],p[i+2],q[2],q[3]);
-      quadr(S,p[i+2],p[i],q[0],q[2]); 
-   }
-  for (i=0;i<4;i++)
-    S.new_triangle(p[i],p[i+4],q[i]);
-  if (c == 's')
-    quadr(S,q[0],q[1],q[3],q[2]);
-}
-
-
-static bool init() {
-  Border::registry["cube"] = new Border(border_function, new_border_vertex, init_border);
-  return true;
-}
-
-static bool initializer = init();
+static bool initializer = registry_function<Cube>("cube");

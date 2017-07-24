@@ -21,21 +21,11 @@ const double surf::evolve_factor = 0.85;
 
 int surf::interrupt=0;
 
-surf::surf(Border *border_): border(border_) {
+surf::surf() {
     first_vertex=0;
     first_triangle=0;
     ntriangles=0;
-    border->init_border(*this);
   }
-
-vector3 surf::border_function(double t) {
-    return border->border_function(t);
-  }
-
-vertex* surf::new_border_vertex(vertex *v, vertex *w) {
-  return border->new_border_vertex(*this, v, w);
-}
-
 
 void surf::add(vertex *v) {
   assert(v->next==0);
@@ -72,96 +62,6 @@ void surf::remove(triangle *t) {
   delete t;
   ntriangles--;
 }
-
-void surf::serialize(ostream &out) const {
-  out<<"SURF 1\n";
-  
-  map<const vertex *,int> vmap;
-  map<const triangle *,int> tmap;
-  int i;
-  
-  i=0;
-  for (const vertex *p=first_vertex;p;p=p->next) 
-    vmap[p]=i++;
-
-  assert(vmap.size()==n_vertices());
-  
-  i=0;
-  for (const triangle *p=first_triangle;p;p=p->next) 
-    tmap[p]=i++;
-  
-  assert(tmap.size()==ntriangles);
-
-  out<<vmap.size()<<" "<<tmap.size()<<"\n";
-
-  // serialize vertices
-
-  out<<"VERTICES\n";
-  for (const vertex *p=first_vertex;p;p=p->next) {
-    out<<vmap[p]<<" "<<p->x[0]<<" "<<p->x[1]<<" "<<p->x[2]<<"\n";
-    out<<p->border<<" "<<vmap[p->next_border]<<"\n";
-    out<<p->n_triangle()<<" ";
-    for (const triangle_list* q=p->list;q;q=q->next)
-      out<<tmap[q->first]<<" ";
-    out<<"\n";
-  }
-
-  //serialize triangles
-  out<<"TRIANGLES\n";
-  
-  for (const triangle *p=first_triangle;p;p=p->next) {
-    out<<tmap[p]<<" "
-       <<vmap[p->v[0]]<<" "<<vmap[p->v[1]]<<" "<<vmap[p->v[2]]<<"\n";
-  }
-}
-
-/*
-surf *unserialize(istream &in, surf *S) {
-  if (S==0) {
-    S=new surf;
-  } else {
-    // s andrebbe ripulito
-  }
-  
-  string s;
-  
-  in>>s;
-  if (s!="SURF") throw runtime_error("SURF expected unserializing");
-
-  int version;
-  in>>version;
-  if (version!=1) throw runtime_error("unknown SURF version");
-  
-  int nvertices,ntriangles;
-  
-  in>>nvertices>>ntriangles;
-  
-  vector<vertex *> vmap(nvertices);
-  vector<triangle *> tmap(ntriangles);
-
-  for (int i=0;i<nvertices;++i)
-    vmap[i]=new vertex;
-  
-  for (int i=0;i<ntriangles;++i) 
-    tmap[i]=new triangle;
-
-  for (int i=0;i<nvertices;++i) {
-    int n;
-    cin>>n;
-    if (n!=i) throw runtime_error("unserialize error (1843)");
-    
-    in>> vmap[i]->x[0] >> vmap[i]->x[1] >> vmap[i]->x[2];
-    in>> vmap[i]->border>>n; //
-    vmap[i]->next_border=vmap[n];
-    
-    in>>n; //ntriangles
-    for (int j=0;j<n;j++) {
-      
-    }
-  }
-  
-}
-*/
 
 int surf::n_vertices() const {
   int i=0;
@@ -507,13 +407,6 @@ void surf::auto_zoom(camera &view)
 	}
     }
   view.film(2*(x1>-x0?x1:-x0),2*(y1>-y0?y1:-y0),1); // resize film
-}
-
-void surf::transform_vertices(transform_function transform) {
-  for (vertex *v=first_vertex;v!=NULL;v=v->next)
-    {
-      *(vector3*)v=transform(*v);
-    }
 }
 
 void surf::geomview_off(ostream &out) const {

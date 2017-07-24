@@ -19,21 +19,6 @@ void handler(int a)
   surf::interrupt=1;
 }
 
-/*
-Border *selected_border = 0;
-
-void init_border(surf &S) {
-  selected_border->init_border(S);
-}
-
-vector3 border_function(double x) {
-  return selected_border->border_function(x);
-}
-
-vertex* surf::new_border_vertex(vertex *v, vertex *w) {
-  return selected_border->new_border_vertex(*this,v,w);
-}
-*/
 
 string main_commands[][2] = {
   {"c", "camera"},
@@ -134,16 +119,18 @@ int main(int argc, char *argv[]) {
     cout<<"Enter border name:";
     cin>>name;
   }
-  if (Border::registry.find(name) == Border::registry.end()) {
+  if (Border::factory.find(name) == Border::factory.end()) {
     cerr<<"invalid border name "<<name<<"\n";
     cerr<<"registered borders:\n";
-    for (Border::Registry::const_iterator i=Border::registry.begin();i!=Border::registry.end();++i) {
+    for (Border::Registry::const_iterator i=Border::factory.begin();i!=Border::factory.end();++i) {
       cerr<< (i->first) << "\n";
     }
     abort();
   }
-  surf S(Border::registry[name]);
-
+  Border *S_ptr = Border::factory[name]();
+  Border &S = *S_ptr;
+  S.init_border();
+  
   camera view;
   view.adjust();
   view.light(versor(vector3(-3,-2,5)));

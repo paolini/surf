@@ -59,10 +59,7 @@ public:
   segment(piece *f,piece *t);
 };
 
-
-
-class curve:public piece
-{
+class curve: public piece {
 public:
   vector3 pos;
   double t0,t1;
@@ -71,3 +68,21 @@ public:
   virtual vector3 point(double t);
   curve(vector3 (*fun)(double t),vector3 start,double t0=0,double t1=1);
 };
+
+template<class T>
+class t_curve: public piece {
+public:
+  vector3 pos;
+  double t0,t1;
+  T *ptr;
+  typedef vector3 (T::*fun_t)(double t);
+  fun_t fun;
+  
+  vector3 point(double t) {return (ptr->*fun)(t);}
+  
+  t_curve(T *ptr_, fun_t fun_, vector3 start, double t0_=0, double t1_=1)
+    : piece(), ptr(ptr_), t0(t0_), t1(t1_), fun(fun_) {
+    pos = start - (ptr->*fun)(t0);
+  }
+};
+

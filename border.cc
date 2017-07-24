@@ -1,3 +1,3 @@
 #include "border.h"
 
-Border::Registry Border::registry;
+Border::Registry Border::factory;
