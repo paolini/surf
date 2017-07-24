@@ -33,17 +33,21 @@ public:
   {
     int i,j;
     vertex *p[6];
-    vertex *q[6];
+    vertex *q[7];
 
     string commands[][2] = {
-      {"s", "simply_connected"},
+      {"1", "brakke_1"},
+      {"2", "brakke_2"},
+      {"3", "brakke_3"},
+      {"4", "brakke_4"},
+      {"5", "brakke_5"},
       {"a", "type_a"},
       {"b", "type_b"},
       {"c", "type_c"},
       {"", ""}
     };
   
-    char c = command_prompt("<S>imply connected, type <A>, type <B>, type <C>? ", commands);
+    char c = command_prompt("<1-5>: Brakke films, type <A>, type <B>, type <C>? ", commands);
 
     p[0]=new_vertex(vector3(1.,0.,0.));
     p[1]=new_vertex(vector3(-1.,0.,0.));
@@ -56,10 +60,51 @@ public:
 	p[i]->border=1.0;
 	p[i]->next_border=p[i];
       }
-    if (tolower (c) == 's') /* una di quelle di Brakke */
+  /*
+     K. Brakke, Soap films and covering spaces, 1995
+     There are 5 examples of minimal films over an octahedron, numbered 1-5
+   */
+    if (tolower (c) == '1') /* la prima di Brakke */
       {
-	printf ("Non gestito!\n");
-	exit (1);
+        q[0]=new_vertex(vector3(1./3,0.,-1./3));   // (p[0]+p[5])/3
+        q[1]=new_vertex(vector3(0.,1./3,-1./3));   // (p[5]+p[2])/3
+        q[2]=new_vertex(vector3(-1./3,1./3,0.));   // (p[2]+p[1])/3
+        q[3]=new_vertex(vector3(-1./3,0.,1./3));   // (p[1]+p[4])/3
+        q[4]=new_vertex(vector3(0.,-1./3,1./3));   // (p[4]+p[3])/3
+        q[5]=new_vertex(vector3(1./3,-1./3,0.));   // (p[3]+p[0])/3
+
+        q[6]=new_vertex(vector3(0.,0.,0.));   // orig
+
+        new_triangle (p[0], p[5], q[0]);
+        new_triangle (p[5], p[2], q[1]);
+        new_triangle (p[2], p[1], q[2]);
+        new_triangle (p[1], p[4], q[3]);
+        new_triangle (p[4], p[3], q[4]);
+        new_triangle (p[3], p[0], q[5]);
+
+	quadr(p[0],p[2],q[1],q[0]);
+	quadr(p[2],p[4],q[3],q[2]);
+	quadr(p[4],p[0],q[5],q[4]);
+
+	quadr(p[3],p[5],q[0],q[5]);
+	quadr(p[5],p[1],q[2],q[1]);
+	quadr(p[1],p[3],q[4],q[3]);
+
+        new_triangle (p[0], q[0], q[5]);
+        new_triangle (p[2], q[2], q[1]);
+        new_triangle (p[4], q[4], q[3]);
+        new_triangle (p[1], q[3], q[2]);
+        new_triangle (p[3], q[5], q[4]);
+        new_triangle (p[5], q[1], q[0]);
+
+        /* esagono centrale */
+
+        new_triangle (q[5], q[0], q[6]);
+        new_triangle (q[0], q[1], q[6]);
+        new_triangle (q[1], q[2], q[6]);
+        new_triangle (q[2], q[3], q[6]);
+        new_triangle (q[3], q[4], q[6]);
+        new_triangle (q[4], q[5], q[6]);
       }
     if (tolower (c) == 'a') /* facce a scacchiera */
       {
