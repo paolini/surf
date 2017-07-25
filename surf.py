@@ -49,6 +49,7 @@ class Surf(object):
         return min_distance / max_distance
 
     def sanity_check(self):
+        # print "sanity_check", len(self.vertices)
         assert self.vertices.shape[1:] == (3, )
         assert self.vertices_params.shape == (len(self.vertices), )
         assert self.edges.shape[1:] == (2, )
@@ -59,9 +60,17 @@ class Surf(object):
         assert np.all(np.logical_or(
             self.triangles[:, 3:] == 0,
             self.triangles[:, 3:] == 1))
+        for i in range(3):
+            j = (i+1) % 3
+            assert np.all(
+                self.edges[self.triangles[:,i],1-self.triangles[:,3+i]]
+                == self.edges[self.triangles[:,j],self.triangles[:,3+j]])
 
     def triangulate(self, ratio=0.5):
-        # aliases
+        """
+        @ratio: split all edges which are longer than ratio times the maximum edge length
+        """
+        # keep old values
         edges = self.edges
         vertices = self.vertices
         triangles = self.triangles
@@ -97,6 +106,7 @@ class Surf(object):
             vertices,
             midpoints[is_long]
             ))
+        del vertices
         # store midpoint parameters
         N = is_long.sum()
         m = np.full(len(edges), np.nan, dtype=self.vertices_params.dtype)
@@ -109,13 +119,13 @@ class Surf(object):
         # create new edges
         # create map to find new half edges from old indices
 
-        #  make a copy of old edges
-        new_edges = np.concatenate((edges, edges[is_long]))
-        new_edges_is_boundary = np.concatenate((
+        # create storage for new edges with a copy of old ones
+        self.edges = np.concatenate((edges, edges[is_long]))
+        self.is_boundary = np.concatenate((
             self.is_boundary,
             is_long_on_boundary[is_long]))
 
-        assert len(new_edges) == len(new_edges_is_boundary)
+        assert len(self.edges) == len(self.is_boundary)
 
         # map edge index to splitted_edge index
         # first column: first half-edge, second column: second half-edge
@@ -124,67 +134,118 @@ class Surf(object):
         splitted_edge_index[is_long,1] = len(edges) + np.arange(is_long.sum())
 
         # replace long edges with first half: replace second vertex with midpoint
-        new_edges[np.arange(len(edges))[is_long], 1] = midpoint_index[is_long]
-        new_edges[len(edges):, 0] = midpoint_index[is_long]
+        self.edges[np.arange(len(edges))[is_long], 1] = midpoint_index[is_long]
+        self.edges[len(edges):, 0] = midpoint_index[is_long]
 
         split_mask = is_long[triangles[:,:3]]
         split_count = split_mask.sum(axis=1)
-        split0_triangles = triangles[split_count == 0]
-        split1_triangles = triangles[split_count == 1]
-        split2_triangles = triangles[split_count == 2]
-        split3_triangles = triangles[split_count == 3]
 
-        # TODO: split split1
-        assert len(split1_triangles) == 0
+        # reconstruct self.triangles.
+        # First we insert old triangles which have not splitting
+        self.triangles = triangles[split_count == 0][:]
 
-        # TODO: split split2
-        assert len(split2_triangles) == 0
+        # split triangles with one edge splitted
+        split_triangles = triangles[split_count == 1]
+        if len(split_triangles):
+            # permute triangles edges so that first edge is always the split one
+            t = np.full(split_triangles.shape, -1, dtype=split_triangles.dtype)
+            mask = split_mask[split_count == 1]
+            # "if"s are required to prevent broadcasting error
+            if np.any(mask[:,0]):
+                t[mask[:,0],:] = split_triangles[mask[:,0],:]
+            if np.any(mask[:,1]):
+                t[mask[:,1],:] = split_triangles[mask[:,1]][:,[1,2,0,4,5,3]]
+            if np.any(mask[:,2]):
+                t[mask[:,2],:] = split_triangles[mask[:,2]][:,[2,0,1,5,3,4]]
+            split_triangles = t
+            del t
+            del mask
+            N = len(split_triangles)
+            # create internal edge from vertex to midpoint
+            new_edges = np.full((N, 2), -1, dtype=edges.dtype)
+            new_edges[:, 0] = edges[split_triangles[:, 2], split_triangles[:, 5]] # first vertex of third edge
+            new_edges[:, 1] = midpoint_index[split_triangles[:, 0]]  # midpoint of first edge
+            # create new triangles
+            new_triangles = np.full((N*2, 6), -1, dtype=triangles.dtype)
+            # first triangle
+            new_triangles[:N, 0] = splitted_edge_index[
+                split_triangles[:, 0],
+                1 - split_triangles[:, 3]]
+            new_triangles[:N, 3] = split_triangles[:, 3]
+            new_triangles[:N, [1, 4]] = split_triangles[:, [1, 4]]
+            new_triangles[:N, 2] = len(self.edges) + np.arange(N)
+            new_triangles[:N, 5] = 0
+            # second triangle
+            new_triangles[N:, 0] = splitted_edge_index[
+                split_triangles[:, 0],
+                split_triangles[:, 3]]
+            new_triangles[N:, 3] = split_triangles[:, 3]
+            new_triangles[N:, 1] = len(self.edges) + np.arange(N)
+            new_triangles[N:, 4] = 1
+            new_triangles[N:, [2, 5]] = split_triangles[:, [2, 5]]
 
-        # split split3_triangles into four new triangles
-        N = len(split3_triangles)
-        # create internal edges. Orient them so that new
-        # internal triangle is counterclockwise
-        new3_edges = np.full((N*3, 2), -1, dtype=edges.dtype)
-        new3_edges[::3] = midpoint_index[split3_triangles[:,[1, 2]]]
-        new3_edges[1::3] = midpoint_index[split3_triangles[:, [2, 0]]]
-        new3_edges[2::3] = midpoint_index[split3_triangles[:, [0, 1]]]
-        # every triangle split3 triangle is divided into 4 small triangles
-        new3_triangles = np.full((N*4, 6), -1, dtype=triangles.dtype)
+            # update new_edges
+            self.edges = np.concatenate((self.edges, new_edges))
+            del new_edges
+            # extend is_boundary for new internal edges with False values
+            x = np.full(len(self.edges), False, dtype=self.is_boundary.dtype)
+            x[:len(self.is_boundary)] = self.is_boundary
+            self.is_boundary = x
+            del x
+            # update new triangles
+            self.triangles = np.concatenate((
+                self.triangles,
+                new_triangles))
+            del new_triangles
 
-        # first we consider the small triangle opposite to edge i
-        for i in range(3):
-            new3_triangles[i*N:(i+1)*N, 0] = splitted_edge_index[
-                split3_triangles[:, (i+1)%3],  # edge
-                1 - split3_triangles[:, 3+(i+1)%3]]  # second half if positive orientation
-            new3_triangles[i*N:(i+1)*N, 3] = split3_triangles[:, 3+(i+1)%3] # same orientation
-            new3_triangles[i*N:(i+1)*N, 1] = splitted_edge_index[
-                split3_triangles[:, (i+2)%3], # edge
-                split3_triangles[:, 3+(i+2)%3]] # first half if positive orientation
-            new3_triangles[i*N:(i+1)*N, 4] = split3_triangles[:, 3+(i+2)%3] # same orientation
-            new3_triangles[i*N:(i+1)*N, 2] = len(new_edges) + np.arange(i,3*N,3) # new edge
-            new3_triangles[i*N:(i+1)*N, 5] = 1 # centrale edge always inverted
-        # then the internal triangle
-        new3_triangles[3*N: 4*N, 0] = len(new_edges) + np.arange(0,3*N,3) # first edge
-        new3_triangles[3*N: 4*N, 1] = len(new_edges) + np.arange(1,3*N,3)
-        new3_triangles[3*N: 4*N, 2] = len(new_edges) + np.arange(2,3*N,3)
-        new3_triangles[3*N: 4*N, 3:6] = 0  # new edges are oriented properly
+        # TODO: split triangles with two edges splitted
+        split_triangles = triangles[split_count == 2]
+        assert len(split_triangles) == 0
 
-        # update new_edges
-        new_edges = np.concatenate((new_edges, new3_edges))
-        del new3_edges
-        # fill additional edges is_boundary (always false)
-        x = np.full(len(new_edges), False, dtype=new_edges_is_boundary.dtype)
-        x[:len(new_edges_is_boundary)] = new_edges_is_boundary
-        new_edges_is_boundary = x
-        del x
+        # split triangles with three edges splitted
+        split_triangles = triangles[split_count == 3]
+        if len(split_triangles):
+            N = len(split_triangles)
+            # create internal edges. Orient them so that new
+            # internal triangle is counterclockwise
+            new_edges = np.full((N*3, 2), -1, dtype=edges.dtype)
+            new_edges[::3] = midpoint_index[split_triangles[:,[1, 2]]]
+            new_edges[1::3] = midpoint_index[split_triangles[:, [2, 0]]]
+            new_edges[2::3] = midpoint_index[split_triangles[:, [0, 1]]]
+            # every triangle split3 triangle is divided into 4 small triangles
+            new_triangles = np.full((N*4, 6), -1, dtype=triangles.dtype)
 
-        self.edges = new_edges
-        self.is_boundary = new_edges_is_boundary
+            # first we consider the small triangle opposite to edge i
+            for i in range(3):
+                new_triangles[i*N:(i+1)*N, 0] = splitted_edge_index[
+                    split_triangles[:, (i+1)%3],  # edge
+                    1 - split_triangles[:, 3+(i+1)%3]]  # second half if positive orientation
+                new_triangles[i*N:(i+1)*N, 3] = split_triangles[:, 3+(i+1)%3] # same orientation
+                new_triangles[i*N:(i+1)*N, 1] = splitted_edge_index[
+                    split_triangles[:, (i+2)%3], # edge
+                    split_triangles[:, 3+(i+2)%3]] # first half if positive orientation
+                new_triangles[i*N:(i+1)*N, 4] = split_triangles[:, 3+(i+2)%3] # same orientation
+                new_triangles[i*N:(i+1)*N, 2] = len(self.edges) + np.arange(i,3*N,3) # new edge
+                new_triangles[i*N:(i+1)*N, 5] = 1 # centrale edge always inverted
+            # then the internal triangle
+            new_triangles[3*N: 4*N, 0] = len(self.edges) + np.arange(0,3*N,3) # first edge
+            new_triangles[3*N: 4*N, 1] = len(self.edges) + np.arange(1,3*N,3)
+            new_triangles[3*N: 4*N, 2] = len(self.edges) + np.arange(2,3*N,3)
+            new_triangles[3*N: 4*N, 3:6] = 0  # new edges are oriented properly
 
-        self.triangles = np.concatenate((
-            triangles[split_count == 0],
-            new3_triangles
-            ))
+            # update new_edges
+            self.edges = np.concatenate((self.edges, new_edges))
+            del new_edges
+            # extend is_boundary for new internal edges with False values
+            x = np.full(len(self.edges), False, dtype=self.is_boundary.dtype)
+            x[:len(self.is_boundary)] = self.is_boundary
+            self.is_boundary = x
+            del x
+            # update new triangles
+            self.triangles = np.concatenate((
+                self.triangles,
+                new_triangles))
+            del new_triangles
 
         self.sanity_check()
 
@@ -236,12 +297,12 @@ def test_triangulation():
          [ 9,  2, 15,  0,  0,  1],
          [10, 11, 12,  0,  0,  0],
          [13, 14, 15,  0,  0,  0]]))
+    print "test_triangulation passed"
 
 
 if __name__ == '__main__':
     test_triangulation()
     surf = Surf()
-    surf.triangulate()
-    surf.triangulate()
-    surf.triangulate()
+    surf.triangulate(ratio=0.8)
+    surf.triangulate(ratio=0.8)
     surf.write_obj("surf.obj")
