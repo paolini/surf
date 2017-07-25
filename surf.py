@@ -204,7 +204,7 @@ class Surf(object):
                 out.write(line)
                 out.write('\n')
 
-def test():
+def test_triangulation():
     surf = Surf()
     surf.triangulate()
     assert np.allclose(surf.vertices, np.array([
@@ -239,7 +239,9 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    test_triangulation()
     surf = Surf()
-    surf.triangulate(ratio=0.6)
+    surf.triangulate()
+    surf.triangulate()
+    surf.triangulate()
     surf.write_obj("surf.obj")
