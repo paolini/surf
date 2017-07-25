@@ -38,7 +38,29 @@ class Surf(object):
             (4, 2, 3,   0, 0, 0),
             ]) # indices in self.edges + orientation 0/1
 
-    def triangulate(self):
+        self.sanity_check()
+
+    def triangle_ratio(self):
+        a = self.vertices[self.edges[:,0]]
+        b = self.vertices[self.edges[:,1]]
+        distance = ((b-a)**2).sum(axis=1) ** 0.5
+        max_distance = distance.max()
+        min_distance = distance.min()
+        return min_distance / max_distance
+
+    def sanity_check(self):
+        assert self.vertices.shape[1:] == (3, )
+        assert self.vertices_params.shape == (len(self.vertices), )
+        assert self.edges.shape[1:] == (2, )
+        assert np.all(self.edges < len(self.vertices))
+        assert self.is_boundary.shape == (len(self.edges), )
+        assert self.triangles.shape[1:] == (6, )
+        assert np.all(self.triangles[:, :3] < len(self.edges))
+        assert np.all(np.logical_or(
+            self.triangles[:, 3:] == 0,
+            self.triangles[:, 3:] == 1))
+
+    def triangulate(self, ratio=0.5):
         # aliases
         edges = self.edges
         vertices = self.vertices
@@ -52,7 +74,7 @@ class Surf(object):
         del a, b
 
         # identify long edges to be splitted
-        is_long = (distance > 0.5 * max_distance)
+        is_long = (distance > ratio * max_distance)
         del distance
         is_long_on_boundary = np.logical_and(is_long, self.is_boundary)
         is_long_internal = np.logical_and(is_long, np.logical_not(self.is_boundary))
@@ -75,6 +97,7 @@ class Surf(object):
             vertices,
             midpoints[is_long]
             ))
+        # store midpoint parameters
         N = is_long.sum()
         m = np.full(len(edges), np.nan, dtype=self.vertices_params.dtype)
         m[is_long_on_boundary] = midpoint_params
@@ -83,14 +106,16 @@ class Surf(object):
             m[is_long]))
         del m
 
-        # create new edges, replace old edges with first half of themselves
-        # and store indices of new second half edges
+        # create new edges
+        # create map to find new half edges from old indices
 
         #  make a copy of old edges
         new_edges = np.concatenate((edges, edges[is_long]))
         new_edges_is_boundary = np.concatenate((
             self.is_boundary,
             is_long_on_boundary[is_long]))
+
+        assert len(new_edges) == len(new_edges_is_boundary)
 
         # map edge index to splitted_edge index
         # first column: first half-edge, second column: second half-edge
@@ -110,8 +135,10 @@ class Surf(object):
         split3_triangles = triangles[split_count == 3]
 
         # TODO: split split1
+        assert len(split1_triangles) == 0
 
         # TODO: split split2
+        assert len(split2_triangles) == 0
 
         # split split3_triangles into four new triangles
         N = len(split3_triangles)
@@ -145,6 +172,11 @@ class Surf(object):
         # update new_edges
         new_edges = np.concatenate((new_edges, new3_edges))
         del new3_edges
+        # fill additional edges is_boundary (always false)
+        x = np.full(len(new_edges), False, dtype=new_edges_is_boundary.dtype)
+        x[:len(new_edges_is_boundary)] = new_edges_is_boundary
+        new_edges_is_boundary = x
+        del x
 
         self.edges = new_edges
         self.is_boundary = new_edges_is_boundary
@@ -154,34 +186,7 @@ class Surf(object):
             new3_triangles
             ))
 
-        assert np.allclose(self.vertices, np.array([
-            [  1.00000000e+00,   0.00000000e+00,   1.00000000e-01],
-            [  6.12323400e-17,   1.00000000e+00,  -1.00000000e-01],
-            [ -1.00000000e+00,   1.22464680e-16,   1.00000000e-01],
-            [ -1.83697020e-16,  -1.00000000e+00,  -1.00000000e-01],
-            [  7.07106781e-01,   7.07106781e-01,   6.12323400e-18],
-            [ -7.07106781e-01,   7.07106781e-01,  -1.83697020e-17],
-            [ -7.07106781e-01,  -7.07106781e-01,   3.06161700e-17],
-            [  7.07106781e-01,  -7.07106781e-01,  -4.28626380e-17],
-            [  0.00000000e+00,   6.12323400e-17,   1.00000000e-01]]))
-        assert np.allclose(self.vertices_params,
-        np.array([ 0.   ,  0.25 ,  0.5  ,  0.75 ,  0.125,  0.375,  0.625,  0.875,
-          np.nan]), equal_nan=True)
-        assert np.all(self.edges == np.array([
-            [0, 4],[1, 5],[2, 6],[3, 7],[0, 8],[4, 1],
-            [5, 2],[6, 3],[7, 0],[8, 2],[5, 8],[8, 4],
-            [4, 5],[6, 7],[7, 8],[8, 6]]))
-        assert np.all(self.is_boundary == np.array([ True,  True,  True,  True, False,  True,  True,  True,  True, False]))
-        assert np.all(self.triangles == np.array(
-            [[ 6,  9, 10,  0,  1,  1],
-             [ 7,  3, 13,  0,  0,  1],
-             [ 4,  0, 11,  1,  0,  1],
-             [ 8,  4, 14,  0,  0,  1],
-             [ 5,  1, 12,  0,  0,  1],
-             [ 9,  2, 15,  0,  0,  1],
-             [10, 11, 12,  0,  0,  0],
-             [13, 14, 15,  0,  0,  0]]))
-
+        self.sanity_check()
 
     def obj_lines(self):
         yield "# surf object"
@@ -199,6 +204,42 @@ class Surf(object):
                 out.write(line)
                 out.write('\n')
 
-surf = Surf()
-surf.triangulate()
-surf.write_obj("surf.obj")
+def test():
+    surf = Surf()
+    surf.triangulate()
+    assert np.allclose(surf.vertices, np.array([
+        [  1.00000000e+00,   0.00000000e+00,   1.00000000e-01],
+        [  6.12323400e-17,   1.00000000e+00,  -1.00000000e-01],
+        [ -1.00000000e+00,   1.22464680e-16,   1.00000000e-01],
+        [ -1.83697020e-16,  -1.00000000e+00,  -1.00000000e-01],
+        [  7.07106781e-01,   7.07106781e-01,   6.12323400e-18],
+        [ -7.07106781e-01,   7.07106781e-01,  -1.83697020e-17],
+        [ -7.07106781e-01,  -7.07106781e-01,   3.06161700e-17],
+        [  7.07106781e-01,  -7.07106781e-01,  -4.28626380e-17],
+        [  0.00000000e+00,   6.12323400e-17,   1.00000000e-01]]))
+    assert np.allclose(surf.vertices_params,
+    np.array([ 0.   ,  0.25 ,  0.5  ,  0.75 ,  0.125,  0.375,  0.625,  0.875,
+      np.nan]), equal_nan=True)
+    assert np.all(surf.edges == np.array([
+        [0, 4],[1, 5],[2, 6],[3, 7],[0, 8],[4, 1],
+        [5, 2],[6, 3],[7, 0],[8, 2],[5, 8],[8, 4],
+        [4, 5],[6, 7],[7, 8],[8, 6]]))
+    assert np.all(surf.is_boundary == np.array([
+        True,  True,  True,  True, False,  True,  True,  True,  True,
+        False, False, False, False, False, False, False]))
+    assert np.all(surf.triangles == np.array(
+        [[ 6,  9, 10,  0,  1,  1],
+         [ 7,  3, 13,  0,  0,  1],
+         [ 4,  0, 11,  1,  0,  1],
+         [ 8,  4, 14,  0,  0,  1],
+         [ 5,  1, 12,  0,  0,  1],
+         [ 9,  2, 15,  0,  0,  1],
+         [10, 11, 12,  0,  0,  0],
+         [13, 14, 15,  0,  0,  0]]))
+
+
+if __name__ == '__main__':
+    test()
+    surf = Surf()
+    surf.triangulate(ratio=0.6)
+    surf.write_obj("surf.obj")
