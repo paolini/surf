@@ -200,7 +200,79 @@ class Surf(object):
 
         # TODO: split triangles with two edges splitted
         split_triangles = triangles[split_count == 2]
-        assert len(split_triangles) == 0
+        if len(split_triangles):
+            # permute edges so that first edge is not split
+            # permute triangles edges so that first edge is always the split one
+            t = np.full(split_triangles.shape, -1, dtype=split_triangles.dtype)
+            mask = np.logical_not(split_mask[split_count == 2])
+            # "if"s are required to prevent broadcasting error
+            if np.any(mask[:,0]):
+                t[mask[:,0],:] = split_triangles[mask[:,0],:]
+            if np.any(mask[:,1]):
+                t[mask[:,1],:] = split_triangles[mask[:,1]][:,[1,2,0,4,5,3]]
+            if np.any(mask[:,2]):
+                t[mask[:,2],:] = split_triangles[mask[:,2]][:,[2,0,1,5,3,4]]
+            split_triangles = t
+            del t
+            del mask
+
+            # create new edges
+            # one edge from midpoints of edges 1 and 2
+            # second edge from first point of edge 0 to midpoints of edge 1
+            N = len(split_triangles)
+            new_edges = np.full((2*N, 2), -1, dtype=edges.dtype)
+            new_edges[:N, 0] = midpoint_index[split_triangles[:, 1]]
+            new_edges[:N, 1] = midpoint_index[split_triangles[:, 2]]
+            new_edges[N:, 0] = edges[split_triangles[:, 0],split_triangles[:, 3]]
+            new_edges[N:, 1] = midpoint_index[split_triangles[:, 1]]
+
+            # create new triangles
+            # first triangle adjacent to edge 0
+            # second one with second half of edge 2
+            # third one with vertex opposite to edge 0
+            new_triangles = np.full((N*3, 6), -1, dtype=triangles.dtype)
+            # first triangle
+            new_triangles[:N, [0, 3]] = split_triangles[:, [0, 3]]
+            new_triangles[:N, 1] = splitted_edge_index[
+                split_triangles[:, 1],
+                split_triangles[:, 4]]
+            new_triangles[:N, 4] = split_triangles[:, 4]
+            new_triangles[:N, 2] = len(self.edges) + N + np.arange(N)
+            new_triangles[:N, 5] = 1 # inverted
+            # second triangle
+            new_triangles[N:2*N, 0] = len(self.edges) + N + np.arange(N)
+            new_triangles[N:2*N, 3] = 0
+            new_triangles[N:2*N, 1] = len(self.edges) + np.arange(N)
+            new_triangles[N:2*N, 4] = 0
+            new_triangles[N:2*N, 2] = splitted_edge_index[
+                split_triangles[:, 2],
+                1-split_triangles[:, 5]]
+            new_triangles[N:2*N, 5] = split_triangles[:, 5]
+            # third triangle
+            new_triangles[2*N:, 0] = splitted_edge_index[
+                split_triangles[:, 1],
+                1-split_triangles[:, 4]]
+            new_triangles[2*N:, 3] = split_triangles[:, 4]
+            new_triangles[2*N:, 1] = splitted_edge_index[
+                split_triangles[:, 2],
+                split_triangles[:, 5]]
+            new_triangles[2*N:, 4] = split_triangles[:, 5]
+            new_triangles[2*N:, 2] = len(self.edges) + np.arange(N)
+            new_triangles[2*N:, 5] = 1 # inverted
+
+            # update new_edges
+            self.edges = np.concatenate((self.edges, new_edges))
+            del new_edges
+            # extend is_boundary for new internal edges with False values
+            x = np.full(len(self.edges), False, dtype=self.is_boundary.dtype)
+            x[:len(self.is_boundary)] = self.is_boundary
+            self.is_boundary = x
+            del x
+            # update new triangles
+            self.triangles = np.concatenate((
+                self.triangles,
+                new_triangles))
+            del new_triangles
 
         # split triangles with three edges splitted
         split_triangles = triangles[split_count == 3]
@@ -265,44 +337,14 @@ class Surf(object):
                 out.write(line)
                 out.write('\n')
 
-def test_triangulation():
-    surf = Surf()
-    surf.triangulate()
-    assert np.allclose(surf.vertices, np.array([
-        [  1.00000000e+00,   0.00000000e+00,   1.00000000e-01],
-        [  6.12323400e-17,   1.00000000e+00,  -1.00000000e-01],
-        [ -1.00000000e+00,   1.22464680e-16,   1.00000000e-01],
-        [ -1.83697020e-16,  -1.00000000e+00,  -1.00000000e-01],
-        [  7.07106781e-01,   7.07106781e-01,   6.12323400e-18],
-        [ -7.07106781e-01,   7.07106781e-01,  -1.83697020e-17],
-        [ -7.07106781e-01,  -7.07106781e-01,   3.06161700e-17],
-        [  7.07106781e-01,  -7.07106781e-01,  -4.28626380e-17],
-        [  0.00000000e+00,   6.12323400e-17,   1.00000000e-01]]))
-    assert np.allclose(surf.vertices_params,
-    np.array([ 0.   ,  0.25 ,  0.5  ,  0.75 ,  0.125,  0.375,  0.625,  0.875,
-      np.nan]), equal_nan=True)
-    assert np.all(surf.edges == np.array([
-        [0, 4],[1, 5],[2, 6],[3, 7],[0, 8],[4, 1],
-        [5, 2],[6, 3],[7, 0],[8, 2],[5, 8],[8, 4],
-        [4, 5],[6, 7],[7, 8],[8, 6]]))
-    assert np.all(surf.is_boundary == np.array([
-        True,  True,  True,  True, False,  True,  True,  True,  True,
-        False, False, False, False, False, False, False]))
-    assert np.all(surf.triangles == np.array(
-        [[ 6,  9, 10,  0,  1,  1],
-         [ 7,  3, 13,  0,  0,  1],
-         [ 4,  0, 11,  1,  0,  1],
-         [ 8,  4, 14,  0,  0,  1],
-         [ 5,  1, 12,  0,  0,  1],
-         [ 9,  2, 15,  0,  0,  1],
-         [10, 11, 12,  0,  0,  0],
-         [13, 14, 15,  0,  0,  0]]))
-    print "test_triangulation passed"
-
-
 if __name__ == '__main__':
+    from test_surf import test_triangulation
     test_triangulation()
     surf = Surf()
-    surf.triangulate(ratio=0.8)
-    surf.triangulate(ratio=0.8)
+    r = 0.6
+    surf.triangulate(ratio=r)
+    surf.triangulate(ratio=r)
+    surf.triangulate(ratio=r)
+    surf.triangulate(ratio=r)
+    surf.triangulate(ratio=r)
     surf.write_obj("surf.obj")
