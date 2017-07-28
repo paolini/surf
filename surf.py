@@ -1,52 +1,59 @@
 import numpy as np
+#from numba import jit
 from math import *
+
+def cross_product(v, w):
+    assert len(v) == len(w)
+    assert v.shape[1:] == (3, )
+    assert w.shape[1:] == (3, )
+    r = np.empty((len(v), 3), dtype=v.dtype)
+    r[:, 0] = v[:, 1] * w[:, 2] - v[:, 2] * w[:, 1]
+    r[:, 1] = v[:, 2] * w[:, 0] - v[:, 0] * w[:, 2]
+    r[:, 2] = v[:, 0] * w[:, 1] - v[:, 1] * w[:, 0]
+    return r
+
+def dot_product(v, w):
+    return v[:,0] * w[:,0] + v[:,1] * w[:,1] + v[:,2] * w[:,2]
+
+def product(v, w):
+    return v[:, np.newaxis] * w
+
+def sqr(v):
+    return dot_product(v, v)
+
+def abs(v):
+    return np.sqrt(sqr(v))
 
 class Surf(object):
     def border_curve(self, t):
-        t = 2 * pi * t
-        return np.column_stack([np.cos(t), np.sin(t), 0.1*np.cos(2*t)])
+        """
+        Return an array of shape (len(t), 3) with coordinates of points
+        in the boundary with given parameters
+        @t: 1d array of parameters
+        """
+        raise LogicError("{}.border_curve must be implemented".format(type(self)))
 
     def border_midpoint(self, s1, s2):
+        """
+        given two 1d-arrays of parameters with same length, compute
+        a 1d-arrays of midpoint parameters.
+        """
+        raise LogicError("{}.border_midpoint must be implemente".format(type(self)))
         # assume wrapping happens only when one parameter is 0.0
-        return np.where(np.logical_or(
-                                np.logical_and(s1==0.0, s2>=0.75),
-                                np.logical_and(s2==0.0, s1>=0.75)),
-            0.5*(s1+s2+1.0),  # unwrapping
-            0.5*(s1+s2))
 
     def __init__(self):
-        params = np.array([
-            0.0,  # 0
-            0.25, # 1
-            0.5,  # 2
-            0.75, # 3
-            ])
-        self.vertices = self.border_curve(params)
+        # define empty surface
+
+        # list of vertices:
+        self.vertices = np.full((0, 3), 0.0)
+        # parameter for boundary vertices or nan:
         self.vertices_params = np.full(len(self.vertices), np.nan)
-        self.vertices_params[np.arange(4)] = params
-        self.edges = np.array([
-            (0, 1), # 0
-            (1, 2), # 1
-            (2, 3), # 2
-            (3, 0), # 3
-            (0, 2), # 4
-            ]) # indices in self.vertices
+        # edges (2 indices in vertices):
+        self.edges = np.full((0, 2), 0, dtype=int)
+        # boundary edges flag:
         self.is_boundary = np.full(len(self.edges), False, dtype=bool)
-        self.is_boundary[np.arange(4)] = True # indexed as in self.edges
-        self.triangles = np.array([
-            (0, 1, 4,   0, 0, 1),
-            (4, 2, 3,   0, 0, 0),
-            ]) # indices in self.edges + orientation 0/1
-
-        self.sanity_check()
-
-    def triangle_ratio(self):
-        a = self.vertices[self.edges[:,0]]
-        b = self.vertices[self.edges[:,1]]
-        distance = ((b-a)**2).sum(axis=1) ** 0.5
-        max_distance = distance.max()
-        min_distance = distance.min()
-        return min_distance / max_distance
+        # triangles (3 indices in edges + 3 orientation flag [0: positive, 1: negative])
+        self.triangles = np.full((0, 6), 0, dtype=int)
 
     def sanity_check(self):
         # print "sanity_check", len(self.vertices)
@@ -65,6 +72,96 @@ class Surf(object):
             assert np.all(
                 self.edges[self.triangles[:,i],1-self.triangles[:,3+i]]
                 == self.edges[self.triangles[:,j],self.triangles[:,3+j]])
+
+    def triangle_ratio(self):
+        """
+        ratio between min edge length and max edge length
+        """
+        a = self.vertices[self.edges[:,0]]
+        b = self.vertices[self.edges[:,1]]
+        distance = ((b-a)**2).sum(axis=1) ** 0.5
+        max_distance = distance.max()
+        min_distance = distance.min()
+        return min_distance / max_distance
+
+    def triangle_vertices(self):
+        """
+        array of shape(len(self.triangles), 3) containing the indices
+        of the three vertices of each triangle
+        """
+        return self.edges[self.triangles[:, :3], self.triangles[:, 3:]]
+
+    def vertex_triangles(self):
+        """
+        array of shape(len(self.vertices), K) with K = maximum number
+        of triangles per vertex, containing the list of triangle indices
+        for each vertex multiplied by three and summed to the number of the vertex
+        in such triangle. The list is filled with -1.
+        """
+        N = len(self.triangles)
+        a = np.zeros((N*3, 3), dtype=self.triangles.dtype)
+        v = self.triangle_vertices()
+        a[:N, 0] = v[:, 0]
+        a[N:2*N, 0] = v[:, 1]
+        a[2*N:, 0] = v[:, 2]
+        a[:N, 1] = np.arange(N)*3 + 0
+        a[N:2*N, 1] = np.arange(N)*3 + 1
+        a[2*N:, 1] = np.arange(N)*3 + 2
+        a = a[a[:,0].argsort()]
+        a[:,2] = 1
+        idx = np.flatnonzero(a[1:, 0] != a[:-1, 0])+1
+        a[idx[1:], 2] = idx[:-1] - idx[1:] + 1
+        a[idx[0], 2] = -idx[0] + 1
+        a[0] = 0
+        a[:, 2] = np.cumsum(a[:, 2])
+        K = 1 + max(a[:, 2])
+        r = np.full((len(self.vertices), K), -1, dtype=int)
+        for i in range(K):
+            mask = (a[:, 2] == i)
+            r[a[mask, 0], i] = a[mask, 1]
+        return r
+
+    def triangle_area(self):
+        """
+        area of each triangle
+        """
+        tv = self.triangle_vertices()
+        v = self.vertices[tv[:,1]] - self.vertices[tv[:,0]]
+        w = self.vertices[tv[:,2]] - self.vertices[tv[:,0]]
+        n = cross_product(v, w)
+        return 0.5 * abs(n)
+
+    def area(self):
+        """
+        area of surface
+        """
+        return self.triangle_area().sum()
+
+    def vertex_curvature(self):
+        """
+        curvature vector of each vertex
+        """
+        r = np.zeros(self.vertices.shape)
+        tv = self.triangle_vertices()
+        a = self.triangle_area()
+        x = np.zeros((len(self.triangles), 9), dtype=self.vertices.dtype)
+        for seq in [[0, 1, 2], [1, 2, 0], [2, 0, 1]]:
+            p = self.vertices[tv[:, seq[0]]]
+            v = self.vertices[tv[:, seq[1]]] - p
+            w = self.vertices[tv[:, seq[2]]] - p
+            y = product(dot_product(v, w), (v+w)) - product(sqr(v), w) - product(sqr(w), v)
+            y = product(0.5 / a, y)
+            assert len(tv) == len(y)
+            for i in range(len(tv)):
+                r[tv[i, seq[0]], :] += y[i, :]
+        return r
+
+    def evolve(self, T=10.0, dt=0.1):
+        print "evolve"
+        for t in np.arange(0, T, dt):
+            k = self.vertex_curvature()
+            self.vertices -= dt * k
+            print "area", self.area(), "t", t
 
     def triangulate(self, ratio=0.5):
         """
@@ -338,13 +435,11 @@ class Surf(object):
                 out.write('\n')
 
 if __name__ == '__main__':
-    from test_surf import test_triangulation
-    test_triangulation()
-    surf = Surf()
-    r = 0.6
-    surf.triangulate(ratio=r)
-    surf.triangulate(ratio=r)
-    surf.triangulate(ratio=r)
-    surf.triangulate(ratio=r)
-    surf.triangulate(ratio=r)
+    from test_surf import test, TestSurf
+    test()
+    from sphere import Sphere
+    surf = Sphere()
+    k = surf.vertex_curvature()
+    print dot_product(k, surf.vertices)
+    print abs(k)
     surf.write_obj("surf.obj")

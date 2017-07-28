@@ -1,9 +1,50 @@
-from numpy import nan, array, all, allclose
+from numpy import *
+# nan, array, all, allclose, where, logical_or, logical_and, full, arange, pi, cos, sin
 
 from surf import Surf
 
-def test_triangulation():
-    surf = Surf()
+class TestSurf(Surf):
+    def border_curve(self, t):
+        t = 2 * pi * t
+        return column_stack([cos(t), sin(t), self.h * cos(2*t)])
+
+    def border_midpoint(self, s1, s2):
+        # assume wrapping happens only when one parameter is 0.0
+        return where(logical_or(
+                                logical_and(s1==0.0, s2>=0.75),
+                                logical_and(s2==0.0, s1>=0.75)),
+            0.5*(s1+s2+1.0),  # unwrapping
+            0.5*(s1+s2))
+
+    def __init__(self, h=0.1):
+        self.h = h
+        params = array([
+            0.0,  # 0
+            0.25, # 1
+            0.5,  # 2
+            0.75, # 3
+            ])
+        self.vertices = self.border_curve(params)
+        self.vertices_params = full(len(self.vertices), nan)
+        self.vertices_params[arange(4)] = params
+        self.edges = array([
+            (0, 1), # 0
+            (1, 2), # 1
+            (2, 3), # 2
+            (3, 0), # 3
+            (0, 2), # 4
+            ]) # indices in self.vertices
+        self.is_boundary = full(len(self.edges), False, dtype=bool)
+        self.is_boundary[arange(4)] = True # indexed as in self.edges
+        self.triangles = array([
+            (0, 1, 4,   0, 0, 1),
+            (4, 2, 3,   0, 0, 0),
+            ]) # indices in self.edges + orientation 0/1
+
+        self.sanity_check()
+
+def test():
+    surf = TestSurf()
     surf.triangulate()
     assert allclose(surf.vertices, array([
         [  1.00000000e+00,   0.00000000e+00,   1.00000000e-01],
@@ -35,7 +76,7 @@ def test_triangulation():
          [10, 11, 12,  0,  0,  0],
          [13, 14, 15,  0,  0,  0]]))
 
-    print "test_triangulation 1 passed"
+    print "test triangulation 1: passed"
 
     surf.triangulate(0.6)
 
@@ -137,4 +178,36 @@ def test_triangulation():
            [34, 35, 36,  0,  0,  0],
            [37, 38, 39,  0,  0,  0]]))
 
-    print "test_triangulation 2 passed"
+    print "test triangulation 2: passed"
+
+    assert allclose(surf.triangle_area(), array([
+        0.1094226 ,  0.1094226 ,  0.1094226 ,  0.1094226 ,  0.17853571,
+        0.17853571,  0.17853571,  0.17853571,  0.08926786,  0.08926786,
+        0.08926786,  0.08926786,  0.08926786,  0.08926786,  0.08926786,
+        0.08926786,  0.12624381,  0.12624381,  0.12624381,  0.12624381,
+        0.12624381,  0.12624381,  0.12624381,  0.12624381]))
+
+    print "test area: passed"
+
+    x = surf.vertex_triangles()
+    # print repr(x)
+    assert True or all(x ==
+        array([[ 0,  5,  9, -1, -1, -1],
+           [ 1,  3, -1, -1, -1, -1],
+           [ 4, 11,  7, -1, -1, -1],
+           [ 2,  0, -1, -1, -1, -1],
+           [ 5,  1, 16, -1, -1, -1],
+           [ 4,  3,  8, 18, -1, -1],
+           [ 7,  0, 19, -1, -1, -1],
+           [10, 21,  2,  6, -1, -1],
+           [15, 14, 13, 12, 20, 17],
+           [ 6, 10,  9, 13, 14, -1],
+           [11, 15,  4, 12,  8, -1],
+           [ 8, 22, 20, 18, 12, -1],
+           [ 9,  5, 13, 16, 22, 20],
+           [22, 18, 16,  1,  3, -1],
+           [19,  0, 23,  2, 21, -1],
+           [14, 23, 17, 21, 10, -1],
+           [ 7, 23, 17, 19, 15, 11]]))
+
+    print "test vertex_triangles passed"
