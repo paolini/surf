@@ -149,6 +149,35 @@ public:
         new_triangle (q[3], q[4], q[6]);
         new_triangle (q[4], q[5], q[6]);
       }
+    if (tolower (c) == '3') /* la terza di Brakke */
+      {
+        q[0]=new_vertex(vector3(1./4,1./4,-1./4));   // (p[0]+p[2]+p[5])/4
+        q[1]=new_vertex(vector3(1./4,-1./4,1./4));   // (p[0]+p[3]+p[4])/4
+        q[2]=new_vertex(vector3(-1./4,1./4,1./4));   // (p[2]+p[4]+p[1])/4
+        q[3]=new_vertex(vector3(-1./4,-1./4.,-1./4));   // (p[1]+p[3]+p[5])/4
+
+        q[6]=new_vertex(vector3(0.,0.,0.));   // orig
+
+        new_triangle (p[0], p[2], q[0]);
+        new_triangle (p[0], p[5], q[0]);
+        new_triangle (p[5], p[2], q[0]);
+        new_triangle (p[0], p[4], q[1]);
+        new_triangle (p[0], p[3], q[1]);
+        new_triangle (p[3], p[4], q[1]);
+        new_triangle (p[2], p[4], q[2]);
+        new_triangle (p[1], p[2], q[2]);
+        new_triangle (p[4], p[1], q[2]);
+        new_triangle (p[1], p[3], q[3]);
+        new_triangle (p[3], p[5], q[3]);
+        new_triangle (p[5], p[1], q[3]);
+
+        quadr(p[0],q[0],q[6],q[1]);
+        quadr(p[2],q[2],q[6],q[0]);
+        quadr(p[4],q[1],q[6],q[2]);
+        quadr(p[1],q[2],q[6],q[3]);
+        quadr(p[3],q[1],q[6],q[3]);
+        quadr(p[5],q[0],q[6],q[3]);
+      }
     if (tolower (c) == '4') /* la quarta di Brakke */
       {
         q[0]=new_vertex(vector3(1./4,1./4,-1./4));   // (p[0]+p[2]+p[5])/4
@@ -186,6 +215,39 @@ public:
 
         quadr(p[1],q[2],q[4],p[5]);
         quadr(p[1],q[3],q[5],p[3]);
+      }
+    if (tolower (c) == '5') /* la quinta di Brakke */
+      {
+        q[0]=new_vertex(vector3(1./3,-1./3,0.));   // (p[0]+p[3])/3
+        q[1]=new_vertex(vector3(-1./3,1./3,0.));   // (p[1]+p[2])/3
+        q[2]=new_vertex(vector3(1./4,1./4,1./4));  // (p[0]+p[2]+p[4])/4
+        q[3]=new_vertex(vector3(0.,0.,1./3));      // (2*p[4]+p[5])/3
+        q[4]=new_vertex(vector3(-1./4,-1./4,-1./4));  // (p[1]+p[3]+p[5])/4
+        q[5]=new_vertex(vector3(0.,0.,-1./3));     // (2*p[5]+p[4])/3
+
+        new_triangle (p[0], p[4], q[2]);
+        new_triangle (p[4], p[2], q[2]);
+        new_triangle (p[0], p[2], q[2]);
+        new_triangle (p[3], p[5], q[4]);
+        new_triangle (p[3], p[1], q[4]);
+        new_triangle (p[1], p[5], q[4]);
+        new_triangle (p[0], p[3], q[0]);
+        new_triangle (p[1], p[2], q[1]);
+
+	quadr(p[0],p[5],q[5],q[0]);
+	quadr(p[2],p[5],q[5],q[1]);
+	quadr(p[1],p[4],q[3],q[1]);
+	quadr(p[3],p[4],q[3],q[0]);
+
+        new_triangle (p[4], q[2], q[3]);
+        new_triangle (p[5], q[4], q[5]);
+
+	quadr(p[0],q[2],q[3],q[0]);
+	quadr(p[3],q[0],q[5],q[4]);
+	quadr(p[1],q[4],q[5],q[1]);
+	quadr(p[2],q[1],q[3],q[2]);
+
+	quadr(q[0],q[3],q[1],q[5]);
       }
     if (tolower (c) == 'a') /* facce a scacchiera */
       {
