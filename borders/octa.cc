@@ -106,6 +106,49 @@ public:
         new_triangle (q[3], q[4], q[6]);
         new_triangle (q[4], q[5], q[6]);
       }
+    if (tolower (c) == '2') /* la seconda di Brakke, rispetto a 1 cambiano q[0] e q[1] */
+      {
+        q[0]=new_vertex(vector3(1./4,1./4,-1./4));   // faccia p[0,2,5]
+        q[1]=new_vertex(vector3(-1./4,-1./4,-1./4)); // faccia p[1,3,5]
+        q[2]=new_vertex(vector3(-1./3,1./3,0.));   // (p[2]+p[1])/3
+        q[3]=new_vertex(vector3(-1./3,0.,1./3));   // (p[1]+p[4])/3
+        q[4]=new_vertex(vector3(0.,-1./3,1./3));   // (p[4]+p[3])/3
+        q[5]=new_vertex(vector3(1./3,-1./3,0.));   // (p[3]+p[0])/3
+
+        q[6]=new_vertex(vector3(0.,0.,0.));   // orig
+
+        new_triangle (p[0], p[2], q[0]);
+        new_triangle (p[0], p[5], q[0]);
+        new_triangle (p[5], p[2], q[0]);
+        new_triangle (p[2], p[1], q[2]);
+        new_triangle (p[1], p[4], q[3]);
+        new_triangle (p[4], p[3], q[4]);
+        new_triangle (p[3], p[0], q[5]);
+        new_triangle (p[1], p[5], q[2]);
+        new_triangle (p[3], p[5], q[5]);
+
+	quadr(p[2],p[4],q[3],q[2]);
+	quadr(p[4],p[0],q[5],q[4]);
+
+	quadr(p[0],q[0],q[1],q[5]);
+	quadr(p[2],q[0],q[1],q[2]);
+	quadr(p[1],p[3],q[4],q[3]);
+
+        new_triangle (p[5], q[1], q[5]);
+        new_triangle (p[5], q[1], q[2]);
+        new_triangle (p[4], q[4], q[3]);
+        new_triangle (p[1], q[3], q[2]);
+        new_triangle (p[3], q[5], q[4]);
+        new_triangle (p[5], q[1], q[0]);
+
+        /* pentagono centrale */
+
+        new_triangle (q[5], q[1], q[6]);
+        new_triangle (q[1], q[2], q[6]);
+        new_triangle (q[2], q[3], q[6]);
+        new_triangle (q[3], q[4], q[6]);
+        new_triangle (q[4], q[5], q[6]);
+      }
     if (tolower (c) == '4') /* la quarta di Brakke */
       {
         q[0]=new_vertex(vector3(1./4,1./4,-1./4));   // (p[0]+p[2]+p[5])/4
