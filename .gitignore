@@ -2,3 +2,4 @@
 surf
 examples/*.png
 examples/*.pov
+js/node_modules
