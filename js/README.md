@@ -1,3 +1,3 @@
-Avvia il web server:
+Avvia con:
 
-    python3 -m http.server
+    npx vite
