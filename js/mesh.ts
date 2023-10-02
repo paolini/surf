@@ -170,7 +170,7 @@ export default class Mesh {
         console.log(`newVertices: ${JSON.stringify(newVertices)}`)
         console.log(`newIndices: ${newIndices}`)
         const values: [number,number,number][] = Object.values(newVertices)
-        this.resizeVertices(this.vertices.length + values.length)
+        this.resizeVertices(this.vertices.length/3 + values.length)
         const vertices = this.vertices
         const offset = this.vertices.length 
         for(let i=0; i<values.length; ++i) {
@@ -180,7 +180,6 @@ export default class Mesh {
             }
         }
 
-        /*
         this.borders.forEach(border => {
             const indices = border.indices
             for (let i=0; i<indices.length; ++i) {
@@ -197,24 +196,13 @@ export default class Mesh {
                     if (ttt<0) ttt += border.period
                 }
                 const xyz = border.f(ttt)
-                console.log(`border ${JSON.stringify({
-                    i: i,
-                    ii: ii,
-                    key: key,
-                    v: v,
-                    t: t,
-                    tt: tt,
-                    ttt: ttt,
-                    xyz: xyz,
-                })}`)
                 for (let j=0; j<3; j++) {
                     vertices[c*3 + j] = xyz[j]
                 }
             }
         })
-        */
+        
         this.indices=newIndices
-        this.printVertices()
     }
 
     printVertices() {

@@ -11,9 +11,11 @@ document.body.appendChild( renderer.domElement )
 
 const myMesh = new Mesh()
 
-myMesh.addBorder(
-    t => ([Math.cos(2*Math.PI*t), Math.sin(2*Math.PI*t), 0*Math.sin(t)]),
-    2*Math.PI)
+myMesh.addBorder(t => 
+    ([  Math.cos(2*Math.PI*t), 
+        Math.sin(2*Math.PI*t), 
+        Math.sin(2*t)]),
+    1.0)
 
 myMesh.addBorderVertex(0) // v0
 myMesh.addBorderVertex(0.25) // v1
@@ -23,8 +25,8 @@ myMesh.addBorderVertex(0.75) // v3
 myMesh.addTriangle(0, 1, 2)
 myMesh.addTriangle(2, 3, 0)
 
-//myMesh.triangulate()
-//myMesh.triangulate()
+myMesh.triangulate()
+myMesh.triangulate()
 
 const vertices = new Float32Array( [
 	-1.0, -1.0,  1.0, // v0
