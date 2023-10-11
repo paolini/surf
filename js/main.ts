@@ -14,7 +14,7 @@ const myMesh = new Mesh()
 myMesh.addBorder(t => 
     ([  Math.cos(2*Math.PI*t), 
         Math.sin(2*Math.PI*t), 
-        Math.sin(2*t)]),
+        0.5*Math.sin(4*Math.PI*t)]),
     1.0)
 
 myMesh.addBorderVertex(0) // v0
@@ -55,8 +55,13 @@ camera.position.z = 5
 
 function animate() {
 	requestAnimationFrame( animate )
-    mesh.rotation.x += 0.01
-    mesh.rotation.y += 0.01
 	renderer.render( scene, camera )
+
+	mesh.rotation.x += 0.01
+    mesh.rotation.y += 0.01
+
+	const meanCurvatureVector = myMesh.computeMeanCurvatureVector()
+	// myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
+	mesh.geometry.attributes.position.needsUpdate = true
 }
 animate()

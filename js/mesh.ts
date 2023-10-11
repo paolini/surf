@@ -4,7 +4,7 @@ export default class Mesh {
     indices: number[]
     borders: ({
         f: (t:number)=>[number,number,number],
-        indices: [number,number][]
+        indices: [number,number][], // [n,t]
         period: number,
     })[]
 
@@ -87,7 +87,7 @@ export default class Mesh {
         const nTriangles = indices.length / 3
         const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
 
-        console.log(`old indices: ${indices}`)
+        // console.log(`old indices: ${indices}`)
         this.printVertices()
 
         let lastIndex = this.vertices.length / 3
@@ -167,8 +167,8 @@ export default class Mesh {
                 }
             }
         }
-        console.log(`newVertices: ${JSON.stringify(newVertices)}`)
-        console.log(`newIndices: ${newIndices}`)
+        // console.log(`newVertices: ${JSON.stringify(newVertices)}`)
+        // console.log(`newIndices: ${newIndices}`)
         const values: [number,number,number][] = Object.values(newVertices)
         this.resizeVertices(this.vertices.length/3 + values.length)
         const vertices = this.vertices
@@ -182,7 +182,9 @@ export default class Mesh {
 
         this.borders.forEach(border => {
             const indices = border.indices
+            const newIndices: [number,number][] = []
             for (let i=0; i<indices.length; ++i) {
+                newIndices.push(indices[i])
                 const ii = i<indices.length-1 ? i+1 : 0
                 const key = computeKey(indices[i][0], indices[ii][0])
                 const v = newVertices[key]
@@ -195,11 +197,13 @@ export default class Mesh {
                     ttt -= 0.5*border.period
                     if (ttt<0) ttt += border.period
                 }
+                newIndices.push([c, ttt])
                 const xyz = border.f(ttt)
                 for (let j=0; j<3; j++) {
                     vertices[c*3 + j] = xyz[j]
                 }
             }
+            border.indices = newIndices
         })
         
         this.indices=newIndices
@@ -209,6 +213,77 @@ export default class Mesh {
         const vertices = this.vertices
         for (let i=0; 3*i<vertices.length; i++) {
             console.log(`${i}: (${vertices[3*i]},${vertices[3*i+1]},${vertices[3*i+2]})`)
+        }
+    }
+
+    computeArea() {
+        let area = 0.0
+        const vertices = this.vertices
+        const indices = this.indices
+
+        for (let t=0; t<indices.length; t+=3) {
+            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+            const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+            const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+            const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+            const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+            const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+            const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
+            area += 0.5*Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+        }
+    }
+
+    computeMeanCurvatureVector() {
+        const vertices = this.vertices
+        const indices = this.indices
+        const n = vertices.length / 3
+        const meanCurvatureVector = new Float32Array(n*3)
+        const vertexArea = new Float32Array(n)
+        for (let t=0; t<indices.length; t+=3) {
+            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+            const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+            const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+            const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+            const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+            const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+            const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
+            const area = 0.5*Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+            vertexArea[a] += area
+            vertexArea[b] += area
+            vertexArea[c] += area
+            meanCurvatureVector[3*a] += xabxac
+            meanCurvatureVector[3*a+1] += yabyac
+            meanCurvatureVector[3*a+2] += zabzac
+            meanCurvatureVector[3*b] += xabxac
+            meanCurvatureVector[3*b+1] += yabyac
+            meanCurvatureVector[3*b+2] += zabzac
+            meanCurvatureVector[3*c] += xabxac
+            meanCurvatureVector[3*c+1] += yabyac
+            meanCurvatureVector[3*c+2] += zabzac
+        }
+        for (let i=0; i<n; ++i) {
+            const area = vertexArea[i]
+            meanCurvatureVector[3*i] /= area
+        }
+        for (let i=0; i<this.borders.length; ++i) {
+            for (let j=0; j<this.borders[i].indices.length; ++j) {
+                const n = this.borders[i].indices[j][0]
+                meanCurvatureVector[3*n] = 0.0
+                meanCurvatureVector[3*n+1] = 0.0
+                meanCurvatureVector[3*n+2] = 0.0
+            }
+        }
+        return meanCurvatureVector
+    }
+
+    evolveMeanCurvatureVector(dt: number, meanCurvatureVector: Float32Array) {
+        // this.vertices[0] += dt
+        // return
+        const vertices = this.vertices
+        const indices = this.indices
+        const n = vertices.length / 3
+        for (let i=0; i<n; ++i) {
+            vertices[3*i] += dt*meanCurvatureVector[3*i]
         }
     }
 }
