@@ -1,0 +1,27 @@
+cube
+custom_sizes
+1.0 2.0 4.0
+simply_connected
+triangulate
+0.2
+evolve
+triangulate
+0.2
+evolve
+camera
+  viewpoint
+  6 2 3
+  look_at
+  0.2 0 0
+  exit
+write_ps
+write_pov
+quit
+
+# per l'output Postscript
+camera 
+viewpoint 
+6 4 3 
+look_at 
+0.2 0 0 
+exit
