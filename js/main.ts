@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import Mesh from './mesh'
 
@@ -28,22 +29,7 @@ myMesh.addTriangle(2, 3, 0)
 myMesh.triangulate()
 myMesh.triangulate()
 
-const vertices = new Float32Array( [
-	-1.0, -1.0,  1.0, // v0
-	 1.0, -1.0,  1.0, // v1
-	 1.0,  1.0,  1.0, // v2
-	-1.0,  1.0,  1.0, // v3
-] )
-
-const indices = [
-	0, 1, 2,
-	2, 3, 0,
-]
-
 const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } )
-
-// const geometry = new THREE.BoxGeometry( 1, 1, 1 )
-// const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
 material.wireframe = true
 
 function generateThreeMesh(myMesh: Mesh, material: THREE.Material) {
@@ -53,33 +39,26 @@ function generateThreeMesh(myMesh: Mesh, material: THREE.Material) {
 	return new THREE.Mesh( geometry, material )
 }
 
-/*
-const geometry = new THREE.BufferGeometry()
-geometry.setIndex( myMesh.indices )
-geometry.setAttribute( 'position', new THREE.BufferAttribute( myMesh.vertices, 3 ) )
-let mesh = new THREE.Mesh( geometry, material )
-*/
-let mesh = generateThreeMesh(myMesh, material)
-scene.add( mesh )
 
-camera.position.z = 5
+let mesh = generateThreeMesh(myMesh, material)
+scene.add( mesh );
+
+camera.position.z = 5;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+controls.dampingFactor = 0.25;
+controls.screenSpacePanning = false;
+controls.minDistance = 1;
+controls.maxDistance = 1000;
+controls.maxPolarAngle = Math.PI / 2;
 
 function animate() {
 	requestAnimationFrame( animate )
-	renderer.render( scene, camera )
-
-	mesh.rotation.x += 0.01
-    mesh.rotation.y += 0.01
-
-	const meanCurvatureVector = myMesh.computeMeanCurvatureVector()
-	myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
-	mesh.geometry.attributes.position.needsUpdate = true
+	controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+	renderer.render(scene, camera);
 }
 animate()
-
-// movement - please calibrate these values
-var xSpeed = 0.0001;
-var ySpeed = 0.0001;
 
 document.addEventListener("keydown", onDocumentKeyDown, false);
 
@@ -91,6 +70,11 @@ function onDocumentKeyDown(event) {
 		myMesh.triangulate()
 		mesh = generateThreeMesh(myMesh, material)
 		scene.add(mesh)
+	} else if (key == 'e') {
+		console.log(`evolving`)
+		const meanCurvatureVector = myMesh.computeMeanCurvatureVector()
+		myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
+		mesh.geometry.attributes.position.needsUpdate = true
     } else {
 		console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 	}
