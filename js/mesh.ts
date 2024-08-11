@@ -238,7 +238,7 @@ export default class Mesh {
         const indices = this.indices
         const n = vertices.length / 3
         const meanCurvatureVector = new Float32Array(n*3)
-        const vertexArea = new Float32Array(n)
+
         for (let t=0; t<indices.length; t+=3) {
             const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
             const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
@@ -246,25 +246,26 @@ export default class Mesh {
             const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
             const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
             const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+            const [xbc,ybc,zbc] = [xc-xb, yc-yb, zc-zb]
             const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
-            const area = 0.5*Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
-            vertexArea[a] += area
-            vertexArea[b] += area
-            vertexArea[c] += area
-            meanCurvatureVector[3*a] += xabxac
-            meanCurvatureVector[3*a+1] += yabyac
-            meanCurvatureVector[3*a+2] += zabzac
-            meanCurvatureVector[3*b] += xabxac
-            meanCurvatureVector[3*b+1] += yabyac
-            meanCurvatureVector[3*b+2] += zabzac
-            meanCurvatureVector[3*c] += xabxac
-            meanCurvatureVector[3*c+1] += yabyac
-            meanCurvatureVector[3*c+2] += zabzac
+            const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+
+            const acbc = xac*xbc + yac*ybc + zac*zbc
+            const abbc = xab*xbc + yab*ybc + zab*zbc
+            const abac = xab*xac + yab*yac + zab*zac
+
+            meanCurvatureVector[3*a]   += (-acbc*xab + abbc*xac) / area2
+            meanCurvatureVector[3*a+1] += (-acbc*yab + abbc*yac) / area2
+            meanCurvatureVector[3*a+2] += (-acbc*zab + abbc*zac) / area2
+            meanCurvatureVector[3*b]   += (-abac*xbc + acbc*xab) / area2
+            meanCurvatureVector[3*b+1] += (-abac*ybc + acbc*yab) / area2
+            meanCurvatureVector[3*b+2] += (-abac*zbc + acbc*zab) / area2
+            meanCurvatureVector[3*c]   += (-abbc*xac + abac*xbc) / area2
+            meanCurvatureVector[3*c+1] += (-abbc*yac + abac*ybc) / area2
+            meanCurvatureVector[3*c+2] += (-abbc*zac + abac*zbc) / area2
+
         }
-        for (let i=0; i<n; ++i) {
-            const area = vertexArea[i]
-            meanCurvatureVector[3*i] /= area
-        }
+
         for (let i=0; i<this.borders.length; ++i) {
             for (let j=0; j<this.borders[i].indices.length; ++j) {
                 const n = this.borders[i].indices[j][0]
@@ -277,13 +278,11 @@ export default class Mesh {
     }
 
     evolveMeanCurvatureVector(dt: number, meanCurvatureVector: Float32Array) {
-        // this.vertices[0] += dt
-        // return
         const vertices = this.vertices
-        const indices = this.indices
-        const n = vertices.length / 3
-        for (let i=0; i<n; ++i) {
-            vertices[3*i] += dt*meanCurvatureVector[3*i]
+        for (let i=0; i<vertices.length; i+=3) {
+            vertices[i] -= dt*meanCurvatureVector[i]
+            vertices[i + 1] -= dt*meanCurvatureVector[i + 1]
+            vertices[i + 2] -= dt*meanCurvatureVector[i + 2]
         }
     }
 }

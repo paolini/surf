@@ -61,7 +61,7 @@ function animate() {
     mesh.rotation.y += 0.01
 
 	const meanCurvatureVector = myMesh.computeMeanCurvatureVector()
-	// myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
+	myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
 	mesh.geometry.attributes.position.needsUpdate = true
 }
 animate()
