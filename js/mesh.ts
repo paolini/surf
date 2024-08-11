@@ -1,10 +1,12 @@
+type Vector = [number, number, number]
+
 export default class Mesh {
     buffer: ArrayBuffer
     vertices: Float32Array
     indices: number[]
     borders: ({
-        f: (t:number)=>[number,number,number],
-        indices: [number,number][], // [n,t]
+        f: (t:number)=>Vector,
+        indices: [number,number][]
         period: number,
     })[]
 
@@ -15,7 +17,7 @@ export default class Mesh {
         this.borders = []
     }
 
-    addBorder(f:((number)=>[number,number,number]), period: number) {
+    addBorder(f:((number)=>Vector), period: number) {
         this.borders.push({
             f: f,
             indices: [],
@@ -91,7 +93,7 @@ export default class Mesh {
         this.printVertices()
 
         let lastIndex = this.vertices.length / 3
-        const newVertices: {[key:string]:[number,number,number]} = {} 
+        const newVertices: {[key:string]:Vector} = {} 
         const newIndices: number[] = []
          
         const computeKey = (a,b) => {
@@ -169,7 +171,7 @@ export default class Mesh {
         }
         // console.log(`newVertices: ${JSON.stringify(newVertices)}`)
         // console.log(`newIndices: ${newIndices}`)
-        const values: [number,number,number][] = Object.values(newVertices)
+        const values: Vector[] = Object.values(newVertices)
         this.resizeVertices(this.vertices.length/3 + values.length)
         const vertices = this.vertices
         const offset = this.vertices.length 
@@ -207,6 +209,35 @@ export default class Mesh {
         })
         
         this.indices=newIndices
+    }
+
+    evolve() {
+        const N_TRIANGLES = this.indices.length / 3
+        const N_VERTICES = this.vertices.length / 3
+
+        function vertex(i: number): Vector {
+            return [this.vertices[3*i], this.vertices[3*i+1], this.vertices[3*i+2]]
+        }
+
+        for (let i=0; i<N_TRIANGLES; i++) {
+            const a = this.indices[3*i]
+            const b = this.indices[3*i+1]
+            const c = this.indices[3*i+2]
+            const area = compute_area(vertex(a), vertex(b), vertex(c))
+
+            /* WIP, see vertex.cc vertex::grad */
+            const v = vector_diff(vertex(b), vertex(a))
+            const w = vector_diff(vertex(c), vertex(a))
+
+
+            const grad: Vector = scale_vector(1/(2*area), 
+                vector_diff(scale_vector(number_product(v,w),vector_sum(v,w)), 
+                    vector_sum(
+                        scale_vector(squared_norm(v),w),
+                        scale_vector(squared_norm(w),v))))
+
+            /* WIP */
+        }
     }
 
     printVertices() {
@@ -287,3 +318,28 @@ export default class Mesh {
     }
 }
 
+function compute_area(a: Vector, b: Vector, c:Vector) {
+    const [vx, vy, vz] = [b[0]-a[0], b[1]-a[1], b[2]-a[2]]
+    const [wx, wy, wz] = [c[0]-a[0], c[1]-a[1], c[2]-a[2]]
+    return 0.5*Math.sqrt((vy*wz-vz*wy)**2 + (vz*wx-vx*wz)**2 + (vx*wy-vy*wx)**2)
+}
+
+function vector_diff(a: Vector, b: Vector): Vector {
+    return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
+}
+
+function vector_sum(a: Vector, b: Vector): Vector {
+    return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]
+}
+
+function scale_vector(b: number, a: Vector): Vector {
+    return [a[0]*b, a[1]*b, a[2]*b]
+}
+
+function number_product(a: Vector, b: Vector): number {
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+}
+
+function squared_norm(a: Vector): number {
+    return number_product(a,a)
+}

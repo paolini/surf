@@ -46,20 +46,32 @@ public:
     string commands[][2] = {
       {"s", "simply_connected"},
       {"n", "non_simply_connected"},
+      {"c", "custom_sizes"},
+      {"", ""}
+    };
+    string commands2[][2] = {
+      {"s", "simply_connected"},
+      {"n", "non_simply_connected"},
       {"", ""}
     };
     
-    char c = command_prompt("<S>imply connected, <N>on-simply connected? ", commands);
-    
+    char c = command_prompt("<S>imply connected, <N>on-simply connected? <C>ustomize size?", commands);
+    double sx=1.0, sy=1.0, sz=1.0;
+    if (c=='c') {
+      cout << "Enter sizes x, y, z: ";
+      cin >> sx >> sy >> sz;
+      c = command_prompt("<S>imply connected, <N>on-simply connected?", commands2);
+    }
+
     for (i=0;i<8;i++)
       {
-	p[i]=S.new_vertex(vector3((i/4)-0.5,(i%4)/2-0.5,i%2-0.5));
+	p[i]=S.new_vertex(vector3(sx*((i/4)-0.5),sy*((i%4)/2-0.5),sz*(i%2-0.5)));
 	p[i]->border=1.0;
 	p[i]->next_border=p[i];
       }
     for (i=0;i<4;i++)
       {
-	q[i]=S.new_vertex(vector3(0,(i/2-0.5)*(3-sqrt(3))/3.0,(i%2-0.5)*(3-sqrt(3))/3.0));
+	q[i]=S.new_vertex(vector3(sx*0,sy*(i/2-0.5)*(3-sqrt(3))/3.0,sz*(i%2-0.5)*(3-sqrt(3))/3.0));
       }
     for (i=0;i<8;i+=4)
       {

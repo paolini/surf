@@ -1,4 +1,4 @@
-names= catenoid cube cubehole tetra disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd helicoid
+names= catenoid cube cubehole cubelong tetra disks infty inftybd marco moebius moebius2 moebiusbd para para2 plateau retract retractbd trefoil trefoilbd triple triple2 triple3 triplebd helicoid
 # manu
 # tetra, cubehole: sistemare il punto di vista
 

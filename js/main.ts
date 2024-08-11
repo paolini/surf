@@ -40,15 +40,26 @@ const indices = [
 	2, 3, 0,
 ]
 
-const geometry = new THREE.BufferGeometry()
-geometry.setIndex( myMesh.indices )
-geometry.setAttribute( 'position', new THREE.BufferAttribute( myMesh.vertices, 3 ) )
 const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } )
 
 // const geometry = new THREE.BoxGeometry( 1, 1, 1 )
 // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
 material.wireframe = true
-const mesh = new THREE.Mesh( geometry, material )
+
+function generateThreeMesh(myMesh: Mesh, material: THREE.Material) {
+	const geometry = new THREE.BufferGeometry()
+	geometry.setIndex( myMesh.indices )
+	geometry.setAttribute( 'position', new THREE.BufferAttribute( myMesh.vertices, 3 ) )
+	return new THREE.Mesh( geometry, material )
+}
+
+/*
+const geometry = new THREE.BufferGeometry()
+geometry.setIndex( myMesh.indices )
+geometry.setAttribute( 'position', new THREE.BufferAttribute( myMesh.vertices, 3 ) )
+let mesh = new THREE.Mesh( geometry, material )
+*/
+let mesh = generateThreeMesh(myMesh, material)
 scene.add( mesh )
 
 camera.position.z = 5
@@ -65,3 +76,22 @@ function animate() {
 	mesh.geometry.attributes.position.needsUpdate = true
 }
 animate()
+
+// movement - please calibrate these values
+var xSpeed = 0.0001;
+var ySpeed = 0.0001;
+
+document.addEventListener("keydown", onDocumentKeyDown, false);
+
+function onDocumentKeyDown(event) {
+	var key= event.key
+    if (key == 't') {
+		console.log(`triangulating`)
+		scene.remove(mesh)
+		myMesh.triangulate()
+		mesh = generateThreeMesh(myMesh, material)
+		scene.add(mesh)
+    } else {
+		console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
+	}
+};
