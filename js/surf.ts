@@ -10,6 +10,7 @@ export default class Surf {
         f: (t:number)=>Vector,
         indices: [Index,number][]
         period: number,
+        closed: boolean
     })[]
 
     constructor() {
@@ -25,13 +26,10 @@ export default class Surf {
      * @param period period of parameter if curve is closed, 0 if it is open
      * @returns the index of the newly created border
      */
-    addBorder(f:((number)=>Vector), period: number = 1.0): Index {
+    addBorder(f:((number)=>Vector), period: number = 1.0, closed: boolean=true): Index {
         const borderIndex = this.borders.length
-        this.borders.push({
-            f: f,
-            indices: [],
-            period: period,
-        })
+        const indices = []
+        this.borders.push({f, indices, period, closed})
         return borderIndex
     }
 
@@ -236,7 +234,7 @@ export default class Surf {
                 const t = indices[i][1]
                 const tt = indices[ii][1]
                 let ttt = 0.5*(t+tt)
-                if (border.period && Math.abs(tt-t) > 0.5*border.period) {
+                if (border.closed && Math.abs(tt-t) > 0.5*border.period) {
                     ttt -= 0.5*border.period
                     if (ttt<0) ttt += border.period
                 }
@@ -251,33 +249,6 @@ export default class Surf {
         
         this.indices=newIndices
         return false
-    }
-
-    evolve() {
-        const N_TRIANGLES = this.indices.length / 3
-        const N_VERTICES = this.vertices.length / 3
-
-        function vertex(i) { return this.getVertex(i)}
-
-        for (let i=0; i<N_TRIANGLES; i++) {
-            const a = this.indices[3*i]
-            const b = this.indices[3*i+1]
-            const c = this.indices[3*i+2]
-            const area = compute_area(vertex(a), vertex(b), vertex(c))
-
-            /* WIP, see vertex.cc vertex::grad */
-            const v = vector_diff(vertex(b), vertex(a))
-            const w = vector_diff(vertex(c), vertex(a))
-
-
-            const grad: Vector = scale_vector(1/(2*area), 
-                vector_diff(scale_vector(number_product(v,w),vector_sum(v,w)), 
-                    vector_sum(
-                        scale_vector(squared_norm(v),w),
-                        scale_vector(squared_norm(w),v))))
-
-            /* WIP */
-        }
     }
 
     printVertices() {

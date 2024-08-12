@@ -47,13 +47,6 @@ export class Catenoid extends Surf {
         this.addQuad(1,2,5,4)
         this.addQuad(2,0,3,5)
     }
-
-    run() {
-        this.triangulate(1)
-        this.evolveMeanCurvature(0.05,20)
-        this.triangulate(0.5)
-        this.evolveMeanCurvature(0.05,20)
-    }
 }
 
 export class Cube extends Surf {
@@ -77,18 +70,18 @@ export class Cube extends Surf {
       const vm11 = this.addVertex(0.5*sx,0.7*sy,0.7*sz)
 
       // 12 borders
-      const bx00 = this.addBorder(t => [t*sx, 0, 0], 0.0)
-      const bx01 = this.addBorder(t => [t*sx, 0,sz], 0.0)
-      const bx10 = this.addBorder(t => [t*sx,sy, 0], 0.0)
-      const bx11 = this.addBorder(t => [t*sx,sy,sz], 0.0)
-      const by00 = this.addBorder(t => [ 0,t*sy, 0], 0.0)
-      const by01 = this.addBorder(t => [sx,t*sy, 0], 0.0)
-      const by10 = this.addBorder(t => [ 0,t*sy,sz], 0.0)
-      const by11 = this.addBorder(t => [sx,t*sy,sz], 0.0)
-      const bz00 = this.addBorder(t => [ 0, 0,t*sz], 0.0)
-      const bz01 = this.addBorder(t => [ 0,sy,t*sz], 0.0)
-      const bz10 = this.addBorder(t => [sx, 0,t*sz], 0.0)
-      const bz11 = this.addBorder(t => [sx,sy,t*sz], 0.0)
+      const bx00 = this.addBorder(t => [t*sx, 0, 0], 1.0, false)
+      const bx01 = this.addBorder(t => [t*sx, 0,sz], 1.0, false)
+      const bx10 = this.addBorder(t => [t*sx,sy, 0], 1.0, false)
+      const bx11 = this.addBorder(t => [t*sx,sy,sz], 1.0, false)
+      const by00 = this.addBorder(t => [ 0,t*sy, 0], 1.0, false)
+      const by01 = this.addBorder(t => [sx,t*sy, 0], 1.0, false)
+      const by10 = this.addBorder(t => [ 0,t*sy,sz], 1.0, false)
+      const by11 = this.addBorder(t => [sx,t*sy,sz], 1.0, false)
+      const bz00 = this.addBorder(t => [ 0, 0,t*sz], 1.0, false)
+      const bz01 = this.addBorder(t => [ 0,sy,t*sz], 1.0, false)
+      const bz10 = this.addBorder(t => [sx, 0,t*sz], 1.0, false)
+      const bz11 = this.addBorder(t => [sx,sy,t*sz], 1.0, false)
       
       // fix border vertices
       this.addBorderVertex(0,bx00,v000)
@@ -134,3 +127,41 @@ export class Cube extends Surf {
     }
   }
     
+export class Helicoid extends Surf {
+  constructor(R:number=1.0,r:number=0, h:number=1.0, N:number=2) {
+    super()
+  
+    const PERIOD = 4.0
+    this.addBorder(t => {
+      if (t<2.0) {
+        if (t<1.0) { // t in [0,1]
+	        return [r+t*(R-r),0,-h]
+        } else { // t in [1,2]
+	        const a=N*2.0*PI*(t-1.0)
+	        return [R*cos(a),R*sin(a),(t-1.5)*2.0*h]
+        }
+      } else {
+        if (t<3.0) { // t in [2,3]
+	        const a=N*2.0*PI
+	        const s=(3.0-t)*(R-r)
+	        return [(r+s)*cos(a),(r+s)*sin(a),h]
+        } else { // t in [3,4]
+	        const a=N*2.0*PI*(4.0-t)
+	        return [r*cos(a),r*sin(a),(3.5-t)*2.0*h]
+        }
+      }
+    }, PERIOD)
+
+    this.addBorderVertex(0)
+    this.addBorderVertex(PERIOD/3)
+    this.addBorderVertex(2*PERIOD/3)
+    this.addTriangle(0,1,2)
+  }
+
+  run() {
+    for (let i=0; i<10; i++) {
+      this.triangulate()
+      this.evolveMeanCurvature(0.05,20)
+    }
+  }
+}
