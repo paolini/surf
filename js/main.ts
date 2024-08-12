@@ -45,7 +45,7 @@ camera.position.z = 5;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-controls.dampingFactor = 0.25;
+controls.dampingFactor = 0.5;
 controls.screenSpacePanning = false;
 controls.minDistance = 1;
 controls.maxDistance = 1000;
@@ -58,20 +58,41 @@ function animate() {
 }
 animate()
 
+function triangulate() {
+	scene.remove(mesh)
+	surf.triangulate()
+	mesh = generateThreeMesh(surf, material)
+	scene.add(mesh)
+}
+
+function evolve(count=1) {
+	surf.evolveMeanCurvature(0.05,count)
+	mesh.geometry.attributes.position.needsUpdate = true
+}
+
+function run() {
+	scene.remove(mesh)
+	surf.run()
+	mesh = generateThreeMesh(surf, material)
+	scene.add(mesh)
+	mesh.geometry.attributes.position.needsUpdate = true
+}
+
+if (true) run()
+
 document.addEventListener("keydown", onDocumentKeyDown, false);
 
 function onDocumentKeyDown(event) {
 	var key= event.key
     if (key == 't') {
 		console.log(`triangulating`)
-		scene.remove(mesh)
-		surf.triangulate()
-		mesh = generateThreeMesh(surf, material)
-		scene.add(mesh)
+		triangulate()
 	} else if (key == 'e') {
 		console.log(`evolving`)
-		surf.evolveMeanCurvature(0.05)
-		mesh.geometry.attributes.position.needsUpdate = true
+		evolve()
+	} else if (key == 'r') {
+		console.log('run')
+		run()
 	} else if (key == 'w') {
 		console.log(`wireframe`)
 		material.wireframe = !material.wireframe

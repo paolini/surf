@@ -18,4 +18,17 @@ export class Plateau extends Surf {
         this.addTriangle(0, 1, 2)
         this.addTriangle(2, 3, 0)
     }
+
+    run() {
+        if (this.has_run) return
+        this.has_run = true
+        this.triangulate()
+        this.evolveMeanCurvature(0.05,5)
+        this.triangulate()
+        this.evolveMeanCurvature(0.05,5)
+        this.triangulate()
+        this.evolveMeanCurvature(0.05,5)
+        this.triangulate()
+        this.evolveMeanCurvature(0.05,5)
+    }
 }

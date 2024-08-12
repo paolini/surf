@@ -318,8 +318,8 @@ export default class Surf {
     }
 
     evolveMeanCurvature(dt: number, count: number = 1) {
-        const vector = this.computeMeanCurvatureVector()
         while(count>0) {
+            const vector = this.computeMeanCurvatureVector()
             this.evolveVector(dt, vector)
             count--
         }
