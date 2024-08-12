@@ -1,6 +1,6 @@
 type Vector = [number, number, number]
 
-export default class Mesh {
+export default class Surf {
     buffer: ArrayBuffer
     vertices: Float32Array
     indices: number[]
@@ -308,12 +308,20 @@ export default class Mesh {
         return meanCurvatureVector
     }
 
-    evolveMeanCurvatureVector(dt: number, meanCurvatureVector: Float32Array) {
+    evolveVector(dt: number, meanCurvatureVector: Float32Array) {
         const vertices = this.vertices
         for (let i=0; i<vertices.length; i+=3) {
             vertices[i] -= dt*meanCurvatureVector[i]
             vertices[i + 1] -= dt*meanCurvatureVector[i + 1]
             vertices[i + 2] -= dt*meanCurvatureVector[i + 2]
+        }
+    }
+
+    evolveMeanCurvature(dt: number, count: number = 1) {
+        const vector = this.computeMeanCurvatureVector()
+        while(count>0) {
+            this.evolveVector(dt, vector)
+            count--
         }
     }
 }

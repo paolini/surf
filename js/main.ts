@@ -1,38 +1,36 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
-import Mesh from './mesh'
+import {Plateau} from './examples'
 
 const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 )
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
 
 const renderer = new THREE.WebGLRenderer()
-renderer.setSize( window.innerWidth, window.innerHeight )
-document.body.appendChild( renderer.domElement )
+renderer.setSize(window.innerWidth, window.innerHeight)
+document.body.appendChild(renderer.domElement)
 
-const myMesh = new Mesh()
+const surf = new Plateau()
 
-myMesh.addBorder(t => 
-    ([  Math.cos(2*Math.PI*t), 
-        Math.sin(2*Math.PI*t), 
-        0.5*Math.sin(4*Math.PI*t)]),
-    1.0)
+// Create a material
+const material = new THREE.MeshPhongMaterial();
+// material.wireframe = true
+material.side = THREE.DoubleSide;
+material.transparent = true;
+material.opacity = 0.5;
+material.flatShading = true;
+material.emissive = new THREE.Color("purple");
+material.emissiveIntensity = 4
 
-myMesh.addBorderVertex(0) // v0
-myMesh.addBorderVertex(0.25) // v1
-myMesh.addBorderVertex(0.5) // v2
-myMesh.addBorderVertex(0.75) // v3
+const color = 0xFFFFFF;
+const intensity = 1;
+const light = new THREE.DirectionalLight(color, intensity);
+light.position.set(0, 10, 0);
+light.target.position.set(-5, 0, 0);
+scene.add(light);
+scene.add(light.target);
 
-myMesh.addTriangle(0, 1, 2)
-myMesh.addTriangle(2, 3, 0)
-
-myMesh.triangulate()
-myMesh.triangulate()
-
-const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } )
-material.wireframe = true
-
-function generateThreeMesh(myMesh: Mesh, material: THREE.Material) {
+function generateThreeMesh(myMesh: Surf, material: THREE.Material) {
 	const geometry = new THREE.BufferGeometry()
 	geometry.setIndex( myMesh.indices )
 	geometry.setAttribute( 'position', new THREE.BufferAttribute( myMesh.vertices, 3 ) )
@@ -40,7 +38,7 @@ function generateThreeMesh(myMesh: Mesh, material: THREE.Material) {
 }
 
 
-let mesh = generateThreeMesh(myMesh, material)
+let mesh = generateThreeMesh(surf, material)
 scene.add( mesh );
 
 camera.position.z = 5;
@@ -67,14 +65,16 @@ function onDocumentKeyDown(event) {
     if (key == 't') {
 		console.log(`triangulating`)
 		scene.remove(mesh)
-		myMesh.triangulate()
-		mesh = generateThreeMesh(myMesh, material)
+		surf.triangulate()
+		mesh = generateThreeMesh(surf, material)
 		scene.add(mesh)
 	} else if (key == 'e') {
 		console.log(`evolving`)
-		const meanCurvatureVector = myMesh.computeMeanCurvatureVector()
-		myMesh.evolveMeanCurvatureVector(0.01, meanCurvatureVector)
+		surf.evolveMeanCurvature(0.05)
 		mesh.geometry.attributes.position.needsUpdate = true
+	} else if (key == 'w') {
+		console.log(`wireframe`)
+		material.wireframe = !material.wireframe
     } else {
 		console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 	}
