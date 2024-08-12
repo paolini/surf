@@ -22,7 +22,7 @@ all: $(povs) $(pngs)
 	rm film.ps
 
 %.png: %.pov
-	povray Width=640 Height=480 +Q11 +A0.2 +I$< +FN +O$@ +ua
+	povray Width=640 Height=480 +Q11 +A0.2 +I$< +FN +O$@
 
 %-hd.png: %.pov
 	povray Width=4000 Height=3000 +Q11 +A0.2 +I$< +FN +O$@ +ua
