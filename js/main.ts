@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
 import Surf from './surf'
-import {Pringle,Catenoid,Cube,Helicoid} from './examples'
+import {Pringle,Catenoid,Cube,Helicoid,Manu} from './examples'
 
 class SurfMesh extends THREE.Mesh {
 	surf: Surf
@@ -48,8 +48,8 @@ class World {
 		const color = 0xFFFFFF;
 		const intensity = 1;
 		const light = new THREE.DirectionalLight(color, intensity);
-		//light.position.set(0, 10, 0);
-		//light.target.position.set(-5, 0, 0);
+		light.position.set(0, 10, 0);
+		light.target.position.set(-5, 0, 0);
 		this.scene.add(light);
 		this.scene.add(light.target);
 
@@ -120,6 +120,9 @@ class World {
 				break
 			case '3':
 				this.load(Helicoid)
+				break
+			case 'M':
+				this.load(Manu)
 				break
 			case 't':
 				console.log(`triangulating`)

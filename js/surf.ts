@@ -124,11 +124,11 @@ export default class Surf {
     triangulateOnce(r:number = 0): boolean {
         const indices = this.indices
         const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
-        const targetLengthSquared = 0.5*maxEdgeLengthSquared
+        const targetLengthSquared = r>0 ? Math.max(r*r,0.5*maxEdgeLengthSquared) : 0.5*maxEdgeLengthSquared
 
-        // console.log({maxEdgeLengthSquared,targetLengthSquared,r,rr:r*r})
+        // console.log({maxEdgeLengthSquared,"sqrt":Math.sqrt(maxEdgeLengthSquared),targetLengthSquared,r,rr:r*r})
 
-        if (r && maxEdgeLengthSquared < r*r) return true // below threshold
+        if (r>0 && (maxEdgeLengthSquared < r*r)) return true // below threshold
 
 
         let lastIndex = this.vertices.length / 3
