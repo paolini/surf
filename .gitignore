@@ -1,6 +1,6 @@
-*.o
-surf
-examples/*.png
-examples/*.pov
-js/node_modules
-js/dist
+/cpp/*.o
+/cpp/surf
+/cpp/examples/*.png
+/cpp/examples/*.pov
+/js/node_modules
+/js/dist
