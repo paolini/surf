@@ -1,12 +1,14 @@
-type Vector = [number, number, number]
+import {Vector, scale_vector, vector_sum, vector_diff, number_product, squared_norm, compute_area} from './algebra'
+
+type Index = number
 
 export default class Surf {
     buffer: ArrayBuffer
     vertices: Float32Array
-    indices: number[]
+    indices: Index[]
     borders: ({
         f: (t:number)=>Vector,
-        indices: [number,number][]
+        indices: [Index,number][]
         period: number,
     })[]
 
@@ -17,15 +19,23 @@ export default class Surf {
         this.borders = []
     }
 
-    addBorder(f:((number)=>Vector), period: number = 1.0) {
+    /**
+     * Create a new border with given parameterization
+     * @param f parameterization function
+     * @param period period of parameter if curve is closed, 0 if it is open
+     * @returns the index of the newly created border
+     */
+    addBorder(f:((number)=>Vector), period: number = 1.0): Index {
+        const borderIndex = this.borders.length
         this.borders.push({
             f: f,
             indices: [],
             period: period,
         })
+        return borderIndex
     }
 
-    resizeVertices(n) {
+    resizeVertices(n: Index) {
         const bufferSize = this.buffer.byteLength
         const requiredSize = 4*3*n
         if (bufferSize < requiredSize) {     
@@ -40,7 +50,7 @@ export default class Surf {
         }
     }
 
-    addVertex(x, y, z) {
+    addVertex(x:number, y:number, z:number) {
         const n = this.vertices.length / 3
         this.resizeVertices(n+1)
         this.vertices[3*n] = x
@@ -49,23 +59,36 @@ export default class Surf {
         return n
     }
 
-    addBorderVertex(t: number, borderCount: number = 0) {
-        const border = this.borders[borderCount]
-        const n = this.addVertex(...border.f(t))
-        border.indices.push([n,t])
-        return n
+    getVertex(i: Index): Vector {
+        return [this.vertices[3*i], this.vertices[3*i+1], this.vertices[3*i+2]]
     }
 
-    addTriangle(a, b, c) {
+    /*** 
+     * add a vertex to a boundary
+     * borderCount: is the boundary number
+     * t: is the parameter along the border curve
+     * vertexIndex: if provided add an already existing vertex to the boundary
+     */
+    addBorderVertex(t: number, borderCount: Index = 0, vertexIndex: Index = -1): Index {
+        const border = this.borders[borderCount]
+        const p = border.f(t)
+        if (vertexIndex<0) vertexIndex = this.addVertex(...p)
+        const d = squared_norm(vector_diff(p,this.getVertex(vertexIndex)))
+        if (d>0.001) throw Error("mismatching vertices in addBorderVertex")
+        border.indices.push([vertexIndex,t])
+        return vertexIndex
+    }
+
+    addTriangle(a:Index, b:Index, c:Index) {
         this.indices.push(a, b, c)
     }
 
-    addQuad(a,b,c,d) {
+    addQuad(a:Index,b:Index,c:Index,d:Index) {
         this.indices.push(a,b,c)
         this.indices.push(a,c,d)
     }
 
-    squaredDistanceBetweenVertices(a, b) {
+    squaredDistanceBetweenVertices(a:Index, b:Index):number {
         const x1 = this.vertices[3*a]
         const y1 = this.vertices[3*a + 1]
         const z1 = this.vertices[3*a + 2]
@@ -76,7 +99,7 @@ export default class Surf {
         return d
     }
 
-    computeMaxEdgeLengthSquared() {
+    computeMaxEdgeLengthSquared(): number {
         var maxEdgeLength = 0
         const n = this.indices.length / 3
         for (var t=0; t<n ; t++) {
@@ -91,7 +114,7 @@ export default class Surf {
         return maxEdgeLength
     }
 
-    triangulate(r: number =0) {
+    triangulate(r: number=0) {
         if (r===0) {
             this.triangulateOnce()
             return
@@ -100,14 +123,14 @@ export default class Surf {
         while(!this.triangulateOnce(r)) {}
     }
 
-    triangulateOnce(r:number = 0) {
+    triangulateOnce(r:number = 0): boolean {
         const indices = this.indices
         const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
         const targetLengthSquared = 0.5*maxEdgeLengthSquared
 
-        console.log({maxEdgeLengthSquared,targetLengthSquared,r,rr:r*r})
+        // console.log({maxEdgeLengthSquared,targetLengthSquared,r,rr:r*r})
 
-        if (r && maxEdgeLengthSquared < r*r) return 1 // below threshold
+        if (r && maxEdgeLengthSquared < r*r) return true // below threshold
 
 
         let lastIndex = this.vertices.length / 3
@@ -213,7 +236,7 @@ export default class Surf {
                 const t = indices[i][1]
                 const tt = indices[ii][1]
                 let ttt = 0.5*(t+tt)
-                if (Math.abs(tt-t) > 0.5*border.period) {
+                if (border.period && Math.abs(tt-t) > 0.5*border.period) {
                     ttt -= 0.5*border.period
                     if (ttt<0) ttt += border.period
                 }
@@ -227,15 +250,14 @@ export default class Surf {
         })
         
         this.indices=newIndices
+        return false
     }
 
     evolve() {
         const N_TRIANGLES = this.indices.length / 3
         const N_VERTICES = this.vertices.length / 3
 
-        function vertex(i: number): Vector {
-            return [this.vertices[3*i], this.vertices[3*i+1], this.vertices[3*i+2]]
-        }
+        function vertex(i) { return this.getVertex(i)}
 
         for (let i=0; i<N_TRIANGLES; i++) {
             const a = this.indices[3*i]
@@ -265,7 +287,7 @@ export default class Surf {
         }
     }
 
-    computeArea() {
+    computeArea(): number {
         let area = 0.0
         const vertices = this.vertices
         const indices = this.indices
@@ -280,9 +302,10 @@ export default class Surf {
             const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
             area += 0.5*Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
         }
+        return area
     }
 
-    computeMeanCurvatureVector() {
+    computeMeanCurvatureVector(): Float32Array {
         const vertices = this.vertices
         const indices = this.indices
         const n = vertices.length / 3
@@ -349,30 +372,4 @@ export default class Surf {
         this.triangulate(0.5)
         this.evolveMeanCurvature(0.05,20)
     }
-}
-
-function compute_area(a: Vector, b: Vector, c:Vector) {
-    const [vx, vy, vz] = [b[0]-a[0], b[1]-a[1], b[2]-a[2]]
-    const [wx, wy, wz] = [c[0]-a[0], c[1]-a[1], c[2]-a[2]]
-    return 0.5*Math.sqrt((vy*wz-vz*wy)**2 + (vz*wx-vx*wz)**2 + (vx*wy-vy*wx)**2)
-}
-
-function vector_diff(a: Vector, b: Vector): Vector {
-    return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
-}
-
-function vector_sum(a: Vector, b: Vector): Vector {
-    return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]
-}
-
-function scale_vector(b: number, a: Vector): Vector {
-    return [a[0]*b, a[1]*b, a[2]*b]
-}
-
-function number_product(a: Vector, b: Vector): number {
-    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
-}
-
-function squared_norm(a: Vector): number {
-    return number_product(a,a)
 }
