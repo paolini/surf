@@ -5,6 +5,8 @@ import {Plateau} from './examples'
 
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
+camera.position.x = 5;
+camera.up.set(0, 0, 1);
 
 const renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -19,14 +21,14 @@ material.side = THREE.DoubleSide;
 material.transparent = true;
 material.opacity = 0.5;
 material.flatShading = true;
-material.emissive = new THREE.Color("purple");
+material.emissive = new THREE.Color("blue");
 material.emissiveIntensity = 4
 
 const color = 0xFFFFFF;
 const intensity = 1;
 const light = new THREE.DirectionalLight(color, intensity);
-light.position.set(0, 10, 0);
-light.target.position.set(-5, 0, 0);
+//light.position.set(0, 10, 0);
+//light.target.position.set(-5, 0, 0);
 scene.add(light);
 scene.add(light.target);
 
@@ -40,8 +42,6 @@ function generateThreeMesh(myMesh: Surf, material: THREE.Material) {
 
 let mesh = generateThreeMesh(surf, material)
 scene.add( mesh );
-
-camera.position.z = 5;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -99,4 +99,4 @@ function onDocumentKeyDown(event) {
     } else {
 		console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 	}
-};
+}
