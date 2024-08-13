@@ -2,7 +2,8 @@ import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
 import Surf from './surf'
-import {Pringle,Catenoid,Cube,Helicoid,Manu,Marco} from './examples'
+import {Pringle,Catenoid,Cube,Helicoid,Manu,Marco,Moebius,MoebiusOriented} from './examples'
+import {Octa} from './surfs/octa'
 
 class SurfMesh extends THREE.Mesh {
 	surf: Surf
@@ -62,7 +63,7 @@ class World {
 		this.controls.maxDistance = 1000;
 		this.controls.maxPolarAngle = Math.PI / 2;
 		
-		this.load(Pringle)
+		this.load(new Pringle())
 		document.addEventListener("keydown", evt => this.onDocumentKeyDown(evt), false);
 
 		this.animate()
@@ -80,9 +81,7 @@ class World {
 		this.scene.add(this.surfMesh)	
 	}
 
-	load(SomeSurf) {
-		console.log(`loading ${SomeSurf.name}`)
-		const surf = new SomeSurf()
+	load(surf: Surf) {
 		if (this.AUTO_RUN) surf.run()
 		this.replaceSurf(surf)
 	}
@@ -111,22 +110,35 @@ class World {
 		var key= event.key
 		switch (key) {
 			case '0':
-				this.load(Pringle)
+				this.load(new Pringle())
 				break
 			case '1':
-				this.load(Catenoid)
+				this.load(new Catenoid())
 				break
 			case '2':
-				this.load(Cube)
+				this.load(new Cube())
 				break
 			case '3':
-				this.load(Helicoid)
+				this.load(new Helicoid())
 				break
 			case '4':
-				this.load(Marco)
+				this.load(new Marco())
+				break
+			case '5':
+				this.load(new Moebius())
+				break
+			case '6':
+				this.load(new MoebiusOriented())
+				break
+			case '8': {
+					const modes = ['brakke_1','brakke_2','brakke_3','brakke_4','brakke_5','brakke_a','brakke_b','brakke_c','brakke_d']
+					const mode = modes[((modes.indexOf(this.surfMesh?.surf?.mode) ?? -1)+1) % modes.length]
+					console.log(`loading Octa(${mode})`)
+					this.load(new Octa(mode))
+				}
 				break
 			case 'M':
-				this.load(Manu)
+				this.load(new Manu())
 				break
 			case 't':
 				console.log(`triangulating`)
