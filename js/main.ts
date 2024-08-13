@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
 import Surf from './surf'
-import {Pringle,Catenoid,Cube,Helicoid,Manu} from './examples'
+import {Pringle,Catenoid,Cube,Helicoid,Manu,Marco} from './examples'
 
 class SurfMesh extends THREE.Mesh {
 	surf: Surf
@@ -12,6 +12,7 @@ class SurfMesh extends THREE.Mesh {
 		geometry.setIndex( surf.indices )
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( surf.vertices, 3 ) )
 		super( geometry, material )
+		this.surf = surf
 	}
 } 
 
@@ -120,6 +121,9 @@ class World {
 				break
 			case '3':
 				this.load(Helicoid)
+				break
+			case '4':
+				this.load(Marco)
 				break
 			case 'M':
 				this.load(Manu)
