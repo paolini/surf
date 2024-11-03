@@ -158,6 +158,18 @@ class World {
 				console.log(`wireframe`)
 				this.material.wireframe = !this.material.wireframe
 				break
+			case 'S':
+				console.log('export STL')
+				const stl = this.surfMesh?.surf.exportToSTL()
+				if (stl) {
+					const blob = new Blob([stl], {type: 'text/plain'})
+					const url = URL.createObjectURL(blob)
+					const a = document.createElement('a')
+					a.href = url
+					a.download = 'surf.stl'
+					a.click()
+				}
+				break
 			default:
 				console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 		}

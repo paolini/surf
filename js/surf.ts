@@ -343,4 +343,63 @@ export default class Surf {
         this.triangulate(0.5)
         this.evolveMeanCurvature(0.05,20)
     }
+
+    /**
+     * Export the surface to STL format
+     * @returns STL content as a string
+     */
+    exportToSTL(): string {
+        let stl = 'solid surf\n';
+        const vertices = this.vertices;
+        const indices = this.indices;
+
+        for (let i = 0; i < indices.length; i += 3) {
+            const [a, b, c] = [indices[i], indices[i + 1], indices[i + 2]];
+            const [ax, ay, az] = [vertices[3 * a], vertices[3 * a + 1], vertices[3 * a + 2]];
+            const [bx, by, bz] = [vertices[3 * b], vertices[3 * b + 1], vertices[3 * b + 2]];
+            const [cx, cy, cz] = [vertices[3 * c], vertices[3 * c + 1], vertices[3 * c + 2]];
+
+            const normal = this.computeNormal(ax, ay, az, bx, by, bz, cx, cy, cz);
+
+            stl += `facet normal ${normal[0]} ${normal[1]} ${normal[2]}\n`;
+            stl += `  outer loop\n`;
+            stl += `    vertex ${ax} ${ay} ${az}\n`;
+            stl += `    vertex ${bx} ${by} ${bz}\n`;
+            stl += `    vertex ${cx} ${cy} ${cz}\n`;
+            stl += `  endloop\n`;
+            stl += `endfacet\n`;
+        }
+
+        stl += 'endsolid surf\n';
+        return stl;
+    }
+
+    /**
+     * Compute the normal vector for a triangle
+     * @param ax x-coordinate of vertex A
+     * @param ay y-coordinate of vertex A
+     * @param az z-coordinate of vertex A
+     * @param bx x-coordinate of vertex B
+     * @param by y-coordinate of vertex B
+     * @param bz z-coordinate of vertex B
+     * @param cx x-coordinate of vertex C
+     * @param cy y-coordinate of vertex C
+     * @param cz z-coordinate of vertex C
+     * @returns Normal vector as [nx, ny, nz]
+     */
+    private computeNormal(ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number): [number, number, number] {
+        const abx = bx - ax;
+        const aby = by - ay;
+        const abz = bz - az;
+        const acx = cx - ax;
+        const acy = cy - ay;
+        const acz = cz - az;
+
+        const nx = aby * acz - abz * acy;
+        const ny = abz * acx - abx * acz;
+        const nz = abx * acy - aby * acx;
+
+        const length = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        return [nx / length, ny / length, nz / length];
+    }
 }
