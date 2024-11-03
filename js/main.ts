@@ -34,10 +34,12 @@ class World {
 		this.camera.position.x = 5;
 		this.camera.up.set(0, 0, 1);
 
-		this.renderer = new THREE.WebGLRenderer()
-		this.renderer.setSize(window.innerWidth, window.innerHeight)
-		document.body.appendChild(this.renderer.domElement)
-
+		// Get the existing canvas element
+		const canvas = document.getElementById('my-canvas') as HTMLCanvasElement;
+		
+		// Create the renderer using the existing canvas
+		this.renderer = new THREE.WebGLRenderer({ canvas });
+		this.renderer.setSize(canvas.width, canvas.height);		
 		this.material = new THREE.MeshPhongMaterial()
 		// this.material.wireframe = true
 		this.material.side = THREE.DoubleSide;
