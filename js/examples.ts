@@ -8,7 +8,7 @@ const sqrt = Math.sqrt
 
 export class Pringle extends Surf {
     constructor(h:number=0.5,n:number=2) {
-        super()
+        super(`pringle  h:${h} n:${n}`)
 
         this.addBorder(t => 
             [  cos(t), 
@@ -32,7 +32,7 @@ export class Pringle extends Surf {
 
 export class Catenoid extends Surf {
     constructor(R:number=1, h:number=1) {
-        super()
+        super(`catenoid R:${R} h:${h}`)
 
         this.addBorder(t => [R*cos(t), R*sin(t),0], 2*PI)
         this.addBorder(t => [R*cos(t), R*sin(t),h], 2*PI)
@@ -52,7 +52,7 @@ export class Catenoid extends Surf {
 
 export class Cube extends Surf {
     constructor(simply_connected: boolean = true,sx: number = 1.0,sy: number = 1.0,sz: number = 1.0) {
-      super()
+      super(`cube sx:${sx} sy:${sy} sz:${sz} simply_connected:${simply_connected}`)
 
       // 8 vertices cube 
       const v000 = this.addVertex(0,0,0)
@@ -130,7 +130,7 @@ export class Cube extends Surf {
     
 export class Helicoid extends Surf {
   constructor(R:number=1.0,r:number=0, h:number=1.0, N:number=2) {
-    super()
+    super(`helicoid R:${R} r:${r} h:${h} N:${N}`)
   
     const PERIOD = 4.0
     this.addBorder(t => {
@@ -169,7 +169,7 @@ export class Helicoid extends Surf {
 
 export class Manu extends Surf {
   constructor(depth:number=0.5, R:number=1.0, r:number=0.4, h:number=0.1, radius:number=0.7) { 
-    super()
+    super(`manu depth:${depth} R:${R} r:${r} h:${h} radius:${radius}`)
     let p:[number,number][] = []
     const self = this
 
@@ -363,7 +363,7 @@ export class Manu extends Surf {
 
 export class Marco extends Surf {
   constructor(r:number=1.0, R:number=1.5, h:number=0.7, osc:number=0.1) {
-    super()
+    super(`marco r:${r} R:${R} h:${h} osc:${osc}`)
 
     this.addBorder(t=>[r*cos(t),r*sin(t),h-osc*cos(2.0*t)], 2*PI)
     this.addBorder(t=>[R*cos(t),R*sin(t),osc*cos(2.0*t)], 2*PI)
@@ -406,7 +406,7 @@ export class Marco extends Surf {
 
 class MoebiusBase extends Surf {
   constructor(R:number=1.0, r:number=0.4) {
-    super()
+    super(`moebius R:${R} r:${r}`)
     /* t va da 0 a 4\pi */
     this.addBorder(
       t => [(R-r*cos(t/2.0))*cos(t),(R-r*cos(t/2.0))*sin(t),r*(sin(t/2.0))],
@@ -437,6 +437,7 @@ export class Moebius extends MoebiusBase {
 export class MoebiusOriented extends MoebiusBase {
   constructor(R:number=1.0, r:number=0.4) {
     super(R,r)
+    this.name += " oriented"
     const p = this.computeP()
     this.addTriangle(p[4],p[3],p[5])
     this.addQuad(p[0],p[2],p[3],p[5])

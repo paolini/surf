@@ -8,7 +8,7 @@ import {Vector, squared_norm, vector_diff} from '../algebra'
 export class Octa extends Surf {
     mode: string
     constructor(s:string='brakke_1') {
-        super()
+        super(`Octa(${s})`)
         this.mode = s
         function segment(start:Vector,end:Vector):(number)=>Vector {
             const [sx,sy,sz] = start

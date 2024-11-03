@@ -66,6 +66,7 @@ class World {
 		this.controls.maxPolarAngle = Math.PI / 2;
 		
 		this.load(new Pringle())
+		this.updateInfo()
 		document.addEventListener("keydown", evt => this.onDocumentKeyDown(evt), false);
 
 		this.animate()
@@ -108,6 +109,17 @@ class World {
 		this.replaceSurf(surf)
 	}	
 
+	updateInfo() {
+		const surf = this.surfMesh?.surf
+		if (surf) {
+			const info =  `${surf.name} vertices: ${surf.vertices.length} faces: ${surf.indices.length/3}`
+			const info_div = document.getElementById('my-info')
+			if (info_div) {
+				info_div.textContent = info
+			}
+		}
+	}
+
 	onDocumentKeyDown(event) {
 		var key= event.key
 		switch (key) {
@@ -148,7 +160,7 @@ class World {
 				break
 			case 'e':
 				console.log(`evolving`)
-				this.evolve()
+				this.evolve(0.05)
 				break
 			case 'r':
 				console.log('run')
@@ -173,6 +185,7 @@ class World {
 			default:
 				console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 		}
+		this.updateInfo()
 	}
 }
 

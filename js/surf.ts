@@ -3,6 +3,7 @@ import {Vector, scale_vector, vector_sum, vector_diff, number_product, squared_n
 type Index = number
 
 export default class Surf {
+    name: string
     buffer: ArrayBuffer
     vertices: Float32Array
     indices: Index[]
@@ -13,7 +14,8 @@ export default class Surf {
         closed: boolean
     })[]
 
-    constructor() {
+    constructor(name) {
+        this.name = name
         this.buffer = new ArrayBuffer(0)
         this.vertices = new Float32Array()
         this.indices = []
