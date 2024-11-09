@@ -1,4 +1,5 @@
-import {Vector, scale_vector, vector_sum, vector_diff, number_product, squared_norm, compute_area} from './algebra'
+import {Vector, scale_vector, vector_sum, vector_diff, number_product, vector_product, squared_norm, compute_area} from './algebra'
+import * as THREE from 'three'
 
 type Index = number
 
@@ -322,6 +323,44 @@ export default class Surf {
         return meanCurvatureVector
     }
 
+    computeNormalVector(): Float32Array {
+        const vertices = this.vertices
+        const indices = this.indices
+        const n = vertices.length / 3
+        const normalVector = new Float32Array(n*3)
+
+        for (let t=0; t<indices.length; t+=3) {
+            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+            const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+            const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+            const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+            const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+            const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+            const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
+            const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+
+            normalVector[3*a]   += xabxac / area2
+            normalVector[3*a+1] += yabyac / area2
+            normalVector[3*a+2] += zabzac / area2
+            normalVector[3*b]   += xabxac / area2
+            normalVector[3*b+1] += yabyac / area2
+            normalVector[3*b+2] += zabzac / area2
+            normalVector[3*c]   += xabxac / area2
+            normalVector[3*c+1] += yabyac / area2
+            normalVector[3*c+2] += zabzac / area2
+        }
+
+        // normalize normal vectors
+        for (let i=0; i<n; ++i) {
+            const d = Math.sqrt(normalVector[3*i]*normalVector[3*i] + normalVector[3*i+1]*normalVector[3*i+1] + normalVector[3*i+2]*normalVector[3*i+2])
+            normalVector[3*i] /= d
+            normalVector[3*i+1] /= d
+            normalVector[3*i+2] /= d
+        }
+
+        return normalVector
+    }
+
     evolveVector(dt: number, meanCurvatureVector: Float32Array) {
         const vertices = this.vertices
         for (let i=0; i<vertices.length; i+=3) {
@@ -357,17 +396,17 @@ export default class Surf {
 
         for (let i = 0; i < indices.length; i += 3) {
             const [a, b, c] = [indices[i], indices[i + 1], indices[i + 2]];
-            const [ax, ay, az] = [vertices[3 * a], vertices[3 * a + 1], vertices[3 * a + 2]];
-            const [bx, by, bz] = [vertices[3 * b], vertices[3 * b + 1], vertices[3 * b + 2]];
-            const [cx, cy, cz] = [vertices[3 * c], vertices[3 * c + 1], vertices[3 * c + 2]];
+            const va: Vector = [vertices[3 * a], vertices[3 * a + 1], vertices[3 * a + 2]];
+            const vb: Vector = [vertices[3 * b], vertices[3 * b + 1], vertices[3 * b + 2]];
+            const vc: Vector = [vertices[3 * c], vertices[3 * c + 1], vertices[3 * c + 2]];
 
-            const normal = this.computeNormal(ax, ay, az, bx, by, bz, cx, cy, cz);
+            const normal = computeNormal(va, vb, vc);
 
             stl += `facet normal ${normal[0]} ${normal[1]} ${normal[2]}\n`;
             stl += `  outer loop\n`;
-            stl += `    vertex ${ax} ${ay} ${az}\n`;
-            stl += `    vertex ${bx} ${by} ${bz}\n`;
-            stl += `    vertex ${cx} ${cy} ${cz}\n`;
+            stl += `    vertex ${va[0]} ${va[1]} ${va[2]}\n`;
+            stl += `    vertex ${vb[0]} ${vb[1]} ${vb[2]}\n`;
+            stl += `    vertex ${vc[0]} ${vc[1]} ${vc[2]}\n`;
             stl += `  endloop\n`;
             stl += `endfacet\n`;
         }
@@ -376,32 +415,128 @@ export default class Surf {
         return stl;
     }
 
-    /**
-     * Compute the normal vector for a triangle
-     * @param ax x-coordinate of vertex A
-     * @param ay y-coordinate of vertex A
-     * @param az z-coordinate of vertex A
-     * @param bx x-coordinate of vertex B
-     * @param by y-coordinate of vertex B
-     * @param bz z-coordinate of vertex B
-     * @param cx x-coordinate of vertex C
-     * @param cy y-coordinate of vertex C
-     * @param cz z-coordinate of vertex C
-     * @returns Normal vector as [nx, ny, nz]
-     */
-    private computeNormal(ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number): [number, number, number] {
-        const abx = bx - ax;
-        const aby = by - ay;
-        const abz = bz - az;
-        const acx = cx - ax;
-        const acy = cy - ay;
-        const acz = cz - az;
+    exportToPovRay(camera: THREE.camera): string {
+        const vertices = this.vertices
+        const normalVector = this.computeNormalVector()
 
-        const nx = aby * acz - abz * acy;
-        const ny = abz * acx - abx * acz;
-        const nz = abx * acy - aby * acx;
+        let out:string = ''
 
-        const length = Math.sqrt(nx * nx + ny * ny + nz * nz);
-        return [nx / length, ny / length, nz / length];
-    }
+        function out_vertex(a: number) {
+            out += `<${vertices[3*a]},${vertices[3*a+1]},${vertices[3*a+2]}> `
+        }
+
+        function out_normal(a: number) {
+            out += `<${normalVector[3*a]},${normalVector[3*a+1]},${normalVector[3*a+2]}> `
+        }
+
+        function out_triangle(a: number, b: number, c: number) {        
+            // smooth_triangle
+            // {
+            //     <Corner_1>, <Normal_1>, <Corner_2>,
+            //     <Normal_2>, <Corner_3>, <Normal_3>
+            //     [OBJECT_MODIFIER...]
+            // } 
+            out += "smooth_triangle {\n"
+            out_vertex(a)
+            out_normal(a)
+            out_vertex(b)
+            out_normal(b)
+            out_vertex(c)
+            out_normal(c)
+            out += "}\n"
+        }
+              
+        const r_scale: number=0.001
+        function out_line(a: number,b: number, r:number) {
+            out += "cylinder { "
+            out_vertex(a)
+            out += ", "
+            out_vertex(b)
+            out += ", "
+            out += r*r_scale
+            out += " open texture {Wire}}\n"
+            out += "sphere { "
+            out_vertex(a)
+            out += ", "
+            out += r*r_scale
+            out += " texture {Wire}}\n"
+        }
+      
+        function out_vector(v: Vector) {
+            out += `<${v[0]},${v[1]},${v[2]}> `
+        }
+
+        function out_color(x: Vector) {
+            out += "color rgb "
+            out += `<${x[0]},${x[1]},${x[2]}> `
+        }
+      
+        out += `// POVRAY file generated by surf manu-fatto\n`
+      
+        out += "camera{location "
+        out_vector(camera.position)
+        out += "\n"
+        out += "sky "
+        out_vector(camera.up)
+        out += "\n"
+        out += "look_at "
+        out_vector(camera.lookAt)
+        out += "}\n\n"
+      
+        out += "light_source{ "
+        out_vector([0,0,10])
+        out_color([1,1,1])
+        out += "}\n"
+      
+        // out += "#include \"metals.inc\"\n"
+        out += "#declare P_Chrome2 = color rgb <0.39, 0.41, 0.43>;\n\n"        
+        out += `
+            #ifdef THIS_IS_OLD
+                "#declare Color = texture {\n"
+                "pigment{color rgbf <0.8,0.8,1,0.3>}\n"
+                "finish{irid{0.25 thickness 0.7 turbulence 0.3}\n"
+                "  ambient .4 phong 0.75}\n"
+                "}\n\n"
+                "#declare Wire = texture {\n"
+                "pigment{P_Chrome2}\n"
+                "finish{ambient .4 phong 0.75}\n}\n\n"
+            #else
+                "#declare Color = texture {\n"
+                "pigment{color rgbf <0.75,0.8,1.0,0.3>}\n"
+                "finish{irid{0.2 thickness 0.7 turbulence 0.6}\n"
+                "  ambient .6 phong 0.75}\n"
+                "}\n\n"
+                "#declare Wire = texture {\n"
+                "pigment{P_Chrome2}\n"
+                "finish{ambient 0 phong 0.75}\n}\n\n"
+            #endif
+        `
+        out += "union{\n"
+        out += "// plane { <0,0,1>, -5 pigment {color rgb <1,1,1>}\n"
+        out += "// finish {ambient 0.5}}\n"
+    
+        // BODY
+
+        out += "texture {Color}\n"
+        out += "}\n\n//END\n"
+
+        return out
+      }
 }
+
+/**
+ * Compute the normal vector for a triangle
+ * @param a vertex A
+ * @param b vertex B
+ * @param c vertex C
+ * @returns Normal vector as [nx, ny, nz]
+ */
+function computeNormal(a: Vector, b: Vector, c: Vector): Vector {
+    const ab = vector_diff(b, a)
+    const ac = vector_diff(c, a)
+    const n = vector_product(ab, ac)
+
+    const length = Math.sqrt(squared_norm(n))
+    return scale_vector(1 / length, n)
+}
+

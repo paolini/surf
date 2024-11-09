@@ -173,20 +173,28 @@ class World {
 			case 'S':
 				console.log('export STL')
 				const stl = this.surfMesh?.surf.exportToSTL()
-				if (stl) {
-					const blob = new Blob([stl], {type: 'text/plain'})
-					const url = URL.createObjectURL(blob)
-					const a = document.createElement('a')
-					a.href = url
-					a.download = 'surf.stl'
-					a.click()
-				}
+				if (stl) download(stl, 'surf.stl', 'text/plain')
+				break
+			case 'O':
+				console.log('export POV-RAY')
+				const pov = this.surfMesh?.surf.exportToPovRay(this.camera)
+				if (pov) download(pov, 'surf.pov', 'text/plain')
 				break
 			default:
 				console.log(`unknown command. key: ${event.key} keyCode: ${event.which}`)
 		}
 		this.updateInfo()
 	}
+}
+
+function download(data: string, filename: string, type: string) {
+	const file = new Blob([data], {type: type})
+	const url = URL.createObjectURL(file)
+	const a = document.createElement("a")
+	a.href = url
+	a.download = filename
+	a.click()
+	URL.revokeObjectURL(url)
 }
 
 const world = new World()
