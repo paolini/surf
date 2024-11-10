@@ -71,6 +71,7 @@ class World {
 		this.controls.minDistance = 1;
 		this.controls.maxDistance = 1000;
 		this.controls.maxPolarAngle = Math.PI / 2;
+		this.controls.addEventListener('end', () => this.updateInfo())
 		
 		this.load(new Pringle())
 		this.updateInfo()
@@ -117,19 +118,41 @@ class World {
 	}	
 
 	updateInfo() {
+		const info: any = {}
+
+		const camera = this.camera as THREE.PerspectiveCamera
+		if (camera) {
+			info.camera = {
+				position: camera.position.toArray(),
+				rotation: camera.rotation.toArray(),
+				fov: camera.fov,
+				near: camera.near,
+				far: camera.far,
+			}
+		}
+
 		const surf = this.surfMesh?.surf
 		if (surf) {
-			const info =  `${surf.name} vertices: ${surf.vertices.length} faces: ${surf.indices.length/3}`
-			const info_div = document.getElementById('my-info')
-			if (info_div) {
-				info_div.textContent = info
+			info.surf = {
+				name: surf.name,
+				vertices: surf.vertices.length,
+				faces: surf.indices.length/3,
+				area: surf.computeArea(),
 			}
+		}
+
+		const info_div = document.getElementById('my-info')
+		if (info_div) {
+			info_div.textContent = JSON.stringify(info)
 		}
 	}
 
 	onDocumentKeyDown(event) {
 		var key= event.key
 		switch (key) {
+			case ' ':
+				// use to update info
+				break
 			case '0':
 				this.load(new Pringle())
 				break
