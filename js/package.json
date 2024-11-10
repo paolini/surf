@@ -1,8 +1,14 @@
 {
+"scripts": {
+  "export": "vite build --outDir dist/export --config vite.config.ts && node dist/export/export.js"
+ },
   "dependencies": {
     "three": "^0.157.0"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
     "vite": "^4.4.9"
   }
 }
+ 
