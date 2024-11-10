@@ -2,7 +2,14 @@ import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
 import Surf from './surf'
-import {Pringle,Catenoid,Cube,Helicoid,Manu,Marco,Moebius,MoebiusOriented} from './examples'
+import {Pringle} from './surfs/pringle'
+import {Catenoid} from './surfs/catenoid'
+import {Cube} from './surfs/cube'
+import {Helicoid} from './surfs/helicoid'
+import {Manu} from './surfs/manu'
+import {Marco} from './surfs/marco'
+import {Moebius} from './surfs/moebius'
+import {MoebiusOriented} from './surfs/moebius'
 import {Octa} from './surfs/octa'
 
 class SurfMesh extends THREE.Mesh {
