@@ -19,6 +19,7 @@ class SurfMesh extends THREE.Mesh {
 		const geometry = new THREE.BufferGeometry()
 		geometry.setIndex( surf.indices )
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( surf.vertices, 3 ) )
+		geometry.computeVertexNormals()
 		super( geometry, material )
 		this.surf = surf
 	}
@@ -50,19 +51,30 @@ class World {
 		this.material = new THREE.MeshPhongMaterial()
 		// this.material.wireframe = true
 		this.material.side = THREE.DoubleSide;
+		this.material.color.setRGB(0,0.5,1);
 		this.material.transparent = true;
-		this.material.opacity = 0.5;
-		this.material.flatShading = true;
-		this.material.emissive = new THREE.Color("blue");
-		this.material.emissiveIntensity = 4
+		this.material.opacity = 0.85;
+		if (false) {
+			this.material.flatShading = true;
+			this.material.emissive = new THREE.Color("blue");
+			this.material.emissiveIntensity = 4
+		}
 
-		const color = 0xFFFFFF;
-		const intensity = 1;
-		const light = new THREE.DirectionalLight(color, intensity);
-		light.position.set(0, 10, 0);
-		light.target.position.set(-5, 0, 0);
-		this.scene.add(light);
-		this.scene.add(light.target);
+		if (true) {
+			const color = 0xFFFFFF;
+			const intensity = 1;
+			const light = new THREE.DirectionalLight(color, intensity);
+			light.position.set(0, 10, 0);
+			light.target.position.set(-5, 0, 0);
+			this.scene.add(light);
+			this.scene.add(light.target);
+		}
+
+		if (true) {
+			const sunlight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+			this.scene.add(sunlight)
+		}
+
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 		this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
