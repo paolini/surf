@@ -173,7 +173,39 @@ export class Manu extends Surf {
     }
 
     const l = build("NUELEMA")
-  
+    this.triangulate(radius)
+
+    if (true) { // build connecting moebius strip
+      const dx = 0.2
+      const y = 1.5
+      const yy = 2.5
+      const z = 0.2
+
+      function rectangle(x) {
+        return [
+          self.addVertex(x,yy-y,-z),
+          self.addVertex(x,yy+y,-z),
+          self.addVertex(x,yy+y,z),
+          self.addVertex(x,yy-y,z)
+        ]
+      }
+
+      const first_q = rectangle(0)
+      let last_q = first_q
+      for (let x=dx;x<l;x+=dx) {
+        const q = rectangle(x)
+        this.addQuad(last_q[0],q[0],q[1],last_q[1])
+        this.addQuad(last_q[1],q[1],q[2],last_q[2])
+        this.addQuad(last_q[2],q[2],q[3],last_q[3])
+        this.addQuad(last_q[3],q[3],q[0],last_q[0])
+        last_q = q
+      }
+      this.addQuad(last_q[2],first_q[0],first_q[1],last_q[3])
+      this.addQuad(last_q[3],first_q[1],first_q[2],last_q[0])
+      this.addQuad(last_q[0],first_q[2],first_q[3],last_q[1])
+      this.addQuad(last_q[1],first_q[3],first_q[0],last_q[2])  
+    }
+
     function transform(v:Vector):Vector {
       const [x,y,z] = v
       const vx = x*2.0*PI/l
@@ -183,8 +215,6 @@ export class Manu extends Surf {
       return [(R+a)*cos(vx),(R+a)*sin(vx),b]
       }
     
-    this.triangulate(radius)
-
     for(let i=0;i<this.vertices.length;i+=3) {
       [ this.vertices[i],
         this.vertices[i+1],
