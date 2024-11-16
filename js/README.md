@@ -1,9 +1,11 @@
-Avvia con:
+Run locally:
+```sh
+    npm ci        # once
+    npx vite
 ```
-npm ci        # once
-npx vite
-    ```
+
 Build
-```
-npx vite build --base=/my/public/path/
+```sh
+    npx vite build --base=/my/public/path/
+    npx serve dist
 ```

@@ -45,7 +45,7 @@ export default class Commands {
                 'helicoid'),
             '4': new Command(world => 
                 world.load(new Marco()), 
-                'marco'),
+                'Costa\'s'),
             '5': new Command(world => 
                 world.load(new Moebius()), 
                 'moebius'),
@@ -54,7 +54,7 @@ export default class Commands {
                 'moebius oriented'),
             '8': new Command(world =>
                 this.loadNextOctaMode(world), 
-                'next octa mode'),
+                'cycle octahedrons'),
             'M': new Command(world => 
                 world.load(new Manu()), 
                 'manu'),

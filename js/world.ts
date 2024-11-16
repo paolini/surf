@@ -18,7 +18,8 @@ class SurfMesh extends THREE.Mesh {
 } 
 
 export default class World {
-    info_div: HTMLElement|null 
+    $info: HTMLElement|null 
+    $title: HTMLElement|null
 	AUTO_RUN: boolean
 	surfMesh: SurfMesh|undefined
 	scene: THREE.Scene
@@ -27,9 +28,10 @@ export default class World {
 	material: THREE.Material
 	controls: THREE.Controls
 
-	constructor(options: {canvas: HTMLCanvasElement, info_div?: HTMLElement}) {
-        const canvas = options.canvas
-        this.info_div = options.info_div || null
+	constructor(options: {$canvas: HTMLCanvasElement, $title?: HTMLElement, $info?: HTMLElement}) {
+        this.$info = options.$info || null
+        this.$title = options.$title || null
+        const canvas = options.$canvas
 		this.AUTO_RUN = true
 
 		this.scene = new THREE.Scene()
@@ -143,9 +145,13 @@ export default class World {
 			}
 		}
 
-		if (this.info_div) {
-			this.info_div.textContent = JSON.stringify(info)
+		if (this.$info) {
+			this.$info.textContent = JSON.stringify(info,null,2)
 		}
+
+        if (this.$title) {
+            this.$title.textContent = `Surf [${surf?.name || 'No Surface'}]`
+        }
 	}
 }
 
