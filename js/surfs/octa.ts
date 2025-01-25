@@ -68,36 +68,36 @@ export class Octa extends Surf {
         
                 const q6=this.addVertex(0.,0.,0.)   // orig
         
-                this.addTriangle(p0, p5, q0)
-                this.addTriangle(p5, p2, q1)
-                this.addTriangle(p2, p1, q2)
-                this.addTriangle(p1, p4, q3)
-                this.addTriangle(p4, p3, q4)
-                this.addTriangle(p3, p0, q5)
+                this.addTriangle(0, p0, p5, q0)
+                this.addTriangle(0, p5, p2, q1)
+                this.addTriangle(0, p2, p1, q2)
+                this.addTriangle(0, p1, p4, q3)
+                this.addTriangle(0, p4, p3, q4)
+                this.addTriangle(0, p3, p0, q5)
         
-                this.addQuad(p0,p2,q1,q0)
-                this.addQuad(p2,p4,q3,q2)
-                this.addQuad(p4,p0,q5,q4)
+                this.addQuad(0, p0,p2,q1,q0)
+                this.addQuad(0, p2,p4,q3,q2)
+                this.addQuad(0, p4,p0,q5,q4)
         
-                this.addQuad(p3,p5,q0,q5)
-                this.addQuad(p5,p1,q2,q1)
-                this.addQuad(p1,p3,q4,q3)
+                this.addQuad(0, p3,p5,q0,q5)
+                this.addQuad(0, p5,p1,q2,q1)
+                this.addQuad(0, p1,p3,q4,q3)
         
-                this.addTriangle(p0, q0, q5)
-                this.addTriangle(p2, q2, q1)
-                this.addTriangle(p4, q4, q3)
-                this.addTriangle(p1, q3, q2)
-                this.addTriangle(p3, q5, q4)
-                this.addTriangle(p5, q1, q0)
+                this.addTriangle(0, p0, q0, q5)
+                this.addTriangle(0, p2, q2, q1)
+                this.addTriangle(0, p4, q4, q3)
+                this.addTriangle(0, p1, q3, q2)
+                this.addTriangle(0, p3, q5, q4)
+                this.addTriangle(0, p5, q1, q0)
         
                 /* esagono centrale */
         
-                this.addTriangle(q5, q0, q6)
-                this.addTriangle(q0, q1, q6)
-                this.addTriangle(q1, q2, q6)
-                this.addTriangle(q2, q3, q6)
-                this.addTriangle(q3, q4, q6)
-                this.addTriangle(q4, q5, q6)
+                this.addTriangle(0, q5, q0, q6)
+                this.addTriangle(0, q0, q1, q6)
+                this.addTriangle(0, q1, q2, q6)
+                this.addTriangle(0, q2, q3, q6)
+                this.addTriangle(0, q3, q4, q6)
+                this.addTriangle(0, q4, q5, q6)
             }
                 break
             case 'brakke_2': {
@@ -111,37 +111,37 @@ export class Octa extends Surf {
         
                 const q6=this.addVertex(0.,0.,0.)   // orig
         
-                this.addTriangle(p0, p2, q0)
-                this.addTriangle(p0, p5, q0)
-                this.addTriangle(p5, p2, q0)
-                this.addTriangle(p2, p1, q2)
-                this.addTriangle(p1, p4, q3)
-                this.addTriangle(p4, p3, q4)
-                this.addTriangle(p3, p0, q5)
-                this.addTriangle(p1, p5, q2)
-                this.addTriangle(p3, p5, q5)
+                this.addTriangle(0, p0, p2, q0)
+                this.addTriangle(0, p0, p5, q0)
+                this.addTriangle(0, p5, p2, q0)
+                this.addTriangle(0, p2, p1, q2)
+                this.addTriangle(0, p1, p4, q3)
+                this.addTriangle(0, p4, p3, q4)
+                this.addTriangle(0, p3, p0, q5)
+                this.addTriangle(0, p1, p5, q2)
+                this.addTriangle(0, p3, p5, q5)
         
-                this.addQuad(p2,p4,q3,q2)
-                this.addQuad(p4,p0,q5,q4)
+                this.addQuad(0, p2,p4,q3,q2)
+                this.addQuad(0, p4,p0,q5,q4)
             
-                this.addQuad(p0,q0,q1,q5)
-                this.addQuad(p2,q0,q1,q2)
-                this.addQuad(p1,p3,q4,q3)
+                this.addQuad(0, p0,q0,q1,q5)
+                this.addQuad(0, p2,q0,q1,q2)
+                this.addQuad(0, p1,p3,q4,q3)
         
-                this.addTriangle(p5, q1, q5)
-                this.addTriangle(p5, q1, q2)
-                this.addTriangle(p4, q4, q3)
-                this.addTriangle(p1, q3, q2)
-                this.addTriangle(p3, q5, q4)
-                this.addTriangle(p5, q1, q0)
+                this.addTriangle(0, p5, q1, q5)
+                this.addTriangle(0, p5, q1, q2)
+                this.addTriangle(0, p4, q4, q3)
+                this.addTriangle(0, p1, q3, q2)
+                this.addTriangle(0, p3, q5, q4)
+                this.addTriangle(0, p5, q1, q0)
         
                 /* pentagono centrale */
         
-                this.addTriangle(q5, q1, q6)
-                this.addTriangle(q1, q2, q6)
-                this.addTriangle(q2, q3, q6)
-                this.addTriangle(q3, q4, q6)
-                this.addTriangle(q4, q5, q6)
+                this.addTriangle(0, q5, q1, q6)
+                this.addTriangle(0, q1, q2, q6)
+                this.addTriangle(0, q2, q3, q6)
+                this.addTriangle(0, q3, q4, q6)
+                this.addTriangle(0, q4, q5, q6)
             }
             break
         
@@ -154,25 +154,25 @@ export class Octa extends Surf {
     
             const q6=this.addVertex(0.,0.,0.)   // orig
     
-            this.addTriangle(p0, p2, q0)
-            this.addTriangle(p0, p5, q0)
-            this.addTriangle(p5, p2, q0)
-            this.addTriangle(p0, p4, q1)
-            this.addTriangle(p0, p3, q1)
-            this.addTriangle(p3, p4, q1)
-            this.addTriangle(p2, p4, q2)
-            this.addTriangle(p1, p2, q2)
-            this.addTriangle(p4, p1, q2)
-            this.addTriangle(p1, p3, q3)
-            this.addTriangle(p3, p5, q3)
-            this.addTriangle(p5, p1, q3)
+            this.addTriangle(0, p0, p2, q0)
+            this.addTriangle(0, p0, p5, q0)
+            this.addTriangle(0, p5, p2, q0)
+            this.addTriangle(0, p0, p4, q1)
+            this.addTriangle(0, p0, p3, q1)
+            this.addTriangle(0, p3, p4, q1)
+            this.addTriangle(0, p2, p4, q2)
+            this.addTriangle(0, p1, p2, q2)
+            this.addTriangle(0, p4, p1, q2)
+            this.addTriangle(0, p1, p3, q3)
+            this.addTriangle(0, p3, p5, q3)
+            this.addTriangle(0, p5, p1, q3)
     
-            this.addQuad(p0,q0,q6,q1)
-            this.addQuad(p2,q2,q6,q0)
-            this.addQuad(p4,q1,q6,q2)
-            this.addQuad(p1,q2,q6,q3)
-            this.addQuad(p3,q1,q6,q3)
-            this.addQuad(p5,q0,q6,q3)
+            this.addQuad(0, p0,q0,q6,q1)
+            this.addQuad(0, p2,q2,q6,q0)
+            this.addQuad(0, p4,q1,q6,q2)
+            this.addQuad(0, p1,q2,q6,q3)
+            this.addQuad(0, p3,q1,q6,q3)
+            this.addQuad(0, p5,q0,q6,q3)
           }
         case 'brakke_4': 
         {
@@ -184,34 +184,34 @@ export class Octa extends Surf {
             const q4=this.addVertex(-1./4,-1./4.,-1./3)   // (p1+p3+k*p5)/4
             const q5=this.addVertex(-1./4,-1./3.,-1./4)   // (p1+k*p3+p5)/4
     
-            this.addTriangle(p0, p2, q0)
-            this.addTriangle(p0, p4, q1)
+            this.addTriangle(0, p0, p2, q0)
+            this.addTriangle(0, p0, p4, q1)
     
-            this.addQuad(p2,p4,q3,q2)
+            this.addQuad(0, p2,p4,q3,q2)
     
-            this.addTriangle(p0, p5, q0)
-            this.addTriangle(p5, p2, q0)
-            this.addTriangle(p0, p3, q1)
-            this.addTriangle(p3, p4, q1)
-            this.addTriangle(p1, p2, q2)
-            this.addTriangle(p1, p4, q3)
+            this.addTriangle(0, p0, p5, q0)
+            this.addTriangle(0, p5, p2, q0)
+            this.addTriangle(0, p0, p3, q1)
+            this.addTriangle(0, p3, p4, q1)
+            this.addTriangle(0, p1, p2, q2)
+            this.addTriangle(0, p1, p4, q3)
     
-            this.addTriangle(p1, q3, q2)
+            this.addTriangle(0, p1, q3, q2)
     
-            this.addQuad(q2,q3,q5,q4)
-            this.addQuad(p2,q2,q4,q0)
-            this.addQuad(p4,q1,q5,q3)
+            this.addQuad(0, q2,q3,q5,q4)
+            this.addQuad(0, p2,q2,q4,q0)
+            this.addQuad(0, p4,q1,q5,q3)
     
-            this.addTriangle(p0, q0, q4)
-            this.addTriangle(p0, q4, q5)
-            this.addTriangle(p0, q5, q1)
+            this.addTriangle(0, p0, q0, q4)
+            this.addTriangle(0, p0, q4, q5)
+            this.addTriangle(0, p0, q5, q1)
     
-            this.addTriangle(p5, q0, q4)
-            this.addTriangle(p3, q1, q5)
-            this.addQuad(p3,p5,q4,q5)
+            this.addTriangle(0, p5, q0, q4)
+            this.addTriangle(0, p3, q1, q5)
+            this.addQuad(0, p3,p5,q4,q5)
     
-            this.addQuad(p1,q2,q4,p5)
-            this.addQuad(p1,q3,q5,p3)
+            this.addQuad(0, p1,q2,q4,p5)
+            this.addQuad(0, p1,q3,q5,p3)
           }
           break
         case 'brakke_5': {
@@ -223,37 +223,37 @@ export class Octa extends Surf {
             const q4=this.addVertex(-1./4,-1./4,-1./4)  // (p1+p3+p5)/4
             const q5=this.addVertex(0.,0.,-1./3)     // (2*p5+p4)/3
     
-            this.addTriangle(p0, p4, q2)
-            this.addTriangle(p4, p2, q2)
-            this.addTriangle(p0, p2, q2)
-            this.addTriangle(p3, p5, q4)
-            this.addTriangle(p3, p1, q4)
-            this.addTriangle(p1, p5, q4)
-            this.addTriangle(p0, p3, q0)
-            this.addTriangle(p1, p2, q1)
+            this.addTriangle(0, p0, p4, q2)
+            this.addTriangle(0, p4, p2, q2)
+            this.addTriangle(0, p0, p2, q2)
+            this.addTriangle(0, p3, p5, q4)
+            this.addTriangle(0, p3, p1, q4)
+            this.addTriangle(0, p1, p5, q4)
+            this.addTriangle(0, p0, p3, q0)
+            this.addTriangle(0, p1, p2, q1)
     
-            this.addQuad(p0,p5,q5,q0)
-            this.addQuad(p2,p5,q5,q1)
-            this.addQuad(p1,p4,q3,q1)
-            this.addQuad(p3,p4,q3,q0)
+            this.addQuad(0, p0,p5,q5,q0)
+            this.addQuad(0, p2,p5,q5,q1)
+            this.addQuad(0, p1,p4,q3,q1)
+            this.addQuad(0, p3,p4,q3,q0)
     
-            this.addTriangle(p4, q2, q3)
-            this.addTriangle(p5, q4, q5)
+            this.addTriangle(0, p4, q2, q3)
+            this.addTriangle(0, p5, q4, q5)
     
-            this.addQuad(p0,q2,q3,q0)
-            this.addQuad(p3,q0,q5,q4)
-            this.addQuad(p1,q4,q5,q1)
-            this.addQuad(p2,q1,q3,q2)
+            this.addQuad(0, p0,q2,q3,q0)
+            this.addQuad(0, p3,q0,q5,q4)
+            this.addQuad(0, p1,q4,q5,q1)
+            this.addQuad(0, p2,q1,q3,q2)
         
-            this.addQuad(q0,q3,q1,q5)
+            this.addQuad(0, q0,q3,q1,q5)
             }
             break
         case 'brakke_a': {
             /* facce a scacchiera */
-            this.addTriangle(p0, p2, p4)
-            this.addTriangle(p0, p3, p5)
-            this.addTriangle(p1, p2, p5)
-            this.addTriangle(p1, p3, p4)
+            this.addTriangle(0, p0, p2, p4)
+            this.addTriangle(0, p0, p3, p5)
+            this.addTriangle(0, p1, p2, p5)
+            this.addTriangle(0, p1, p3, p4)
           }
           break
         case 'brakke_b': {
@@ -264,29 +264,29 @@ export class Octa extends Surf {
         
             /* alette */
         
-            this.addTriangle(p0, p2, q0)
-            this.addTriangle(p2, p4, q1)
-            this.addTriangle(p4, p0, q2)
+            this.addTriangle(0, p0, p2, q0)
+            this.addTriangle(0, p2, p4, q1)
+            this.addTriangle(0, p4, p0, q2)
         
             /* top triangle */
         
-            this.addTriangle(p0, q0, q2)
-            this.addTriangle(p2, q1, q0)
-            this.addTriangle(p4, q2, q1)
-            this.addTriangle(q0, q1, q2)
+            this.addTriangle(0, p0, q0, q2)
+            this.addTriangle(0, p2, q1, q0)
+            this.addTriangle(0, p4, q2, q1)
+            this.addTriangle(0, q0, q1, q2)
         
             /* positive trias */
         
-            this.addTriangle(p5, p2, q0)
-            this.addTriangle(p5, q0, p0)
-            this.addTriangle(p1, p4, q1)
-            this.addTriangle(p1, q1, p2)
-            this.addTriangle(p3, p0, q2)
-            this.addTriangle(p3, q2, p4)
+            this.addTriangle(0, p5, p2, q0)
+            this.addTriangle(0, p5, q0, p0)
+            this.addTriangle(0, p1, p4, q1)
+            this.addTriangle(0, p1, q1, p2)
+            this.addTriangle(0, p3, p0, q2)
+            this.addTriangle(0, p3, q2, p4)
         
             /* bottom triangle */
         
-            this.addTriangle(p1, p3, p5)
+            this.addTriangle(0, p1, p3, p5)
           }
         break
         case 'brakke_c': {
@@ -300,36 +300,36 @@ export class Octa extends Surf {
         
             /* alette */
         
-            this.addTriangle(p0, p3, q0)
-            this.addTriangle(p0, p5, q1)
-            this.addTriangle(p2, p5, q2)
-            this.addTriangle(p2, p1, q3)
-            this.addTriangle(p4, p1, q4)
-            this.addTriangle(p4, p3, q5)
+            this.addTriangle(0, p0, p3, q0)
+            this.addTriangle(0, p0, p5, q1)
+            this.addTriangle(0, p2, p5, q2)
+            this.addTriangle(0, p2, p1, q3)
+            this.addTriangle(0, p4, p1, q4)
+            this.addTriangle(0, p4, p3, q5)
         
             /* positive trias */
         
-            this.addTriangle(p0, q0, q1)
-            this.addTriangle(p2, q2, q3)
-            this.addTriangle(p4, q4, q5)
+            this.addTriangle(0, p0, q0, q1)
+            this.addTriangle(0, p2, q2, q3)
+            this.addTriangle(0, p4, q4, q5)
         
             /* negative trias */
         
-            this.addTriangle(p1, q3, q4)
-            this.addTriangle(p3, q5, q0)
-            this.addTriangle(p5, q1, q2)
+            this.addTriangle(0, p1, q3, q4)
+            this.addTriangle(0, p3, q5, q0)
+            this.addTriangle(0, p5, q1, q2)
         
             /* negative trapezoids */
         
-            this.addQuad(p3,p5,q1,q0)
-            this.addQuad(p5,p1,q3,q2)
-            this.addQuad(p1,p3,q5,q4)
+            this.addQuad(0, p3,p5,q1,q0)
+            this.addQuad(0, p5,p1,q3,q2)
+            this.addQuad(0, p1,p3,q5,q4)
         
             /* positive trapezoids */
         
-            this.addQuad(p4,p2,q3,q4)
-            this.addQuad(p0,p4,q5,q0)
-            this.addQuad(p2,p0,q1,q2)
+            this.addQuad(0, p4,p2,q3,q4)
+            this.addQuad(0, p0,p4,q5,q0)
+            this.addQuad(0, p2,p0,q1,q2)
           }
           break
         case 'brakke_d': {
@@ -338,28 +338,28 @@ export class Octa extends Surf {
             const q1=this.addVertex(0.,-0.5,0.)
             const q2=this.addVertex(0.,0.,0.5)
             const q3=this.addVertex(0.,0.,-0.5)
-            this.addTriangle(p0, p2, q0)
-            this.addTriangle(p0, p4, q2)
-            this.addTriangle(p0, q0, q2)
+            this.addTriangle(0, p0, p2, q0)
+            this.addTriangle(0, p0, p4, q2)
+            this.addTriangle(0, p0, q0, q2)
         
-            this.addTriangle(p0, p3, q1)
-            this.addTriangle(p0, p5, q3)
-            this.addTriangle(p0, q1, q3)
+            this.addTriangle(0, p0, p3, q1)
+            this.addTriangle(0, p0, p5, q3)
+            this.addTriangle(0, p0, q1, q3)
         
-            this.addTriangle(p1, p2, q0)
-            this.addTriangle(p1, p5, q3)
-            this.addTriangle(p1, q0, q3)
+            this.addTriangle(0, p1, p2, q0)
+            this.addTriangle(0, p1, p5, q3)
+            this.addTriangle(0, p1, q0, q3)
         
-            this.addTriangle(p1, p3, q1)
-            this.addTriangle(p1, p4, q2)
-            this.addTriangle(p1, q1, q2)
+            this.addTriangle(0, p1, p3, q1)
+            this.addTriangle(0, p1, p4, q2)
+            this.addTriangle(0, p1, q1, q2)
         
-            this.addQuad(p2,p4,q2,q0)
-            this.addQuad(p4,p3,q1,q2)
-            this.addQuad(p3,p5,q3,q1)
-            this.addQuad(p5,p2,q0,q3)
+            this.addQuad(0, p2,p4,q2,q0)
+            this.addQuad(0, p4,p3,q1,q2)
+            this.addQuad(0, p3,p5,q3,q1)
+            this.addQuad(0, p5,p2,q0,q3)
         
-            this.addQuad(q0,q2,q1,q3)
+            this.addQuad(0, q0,q2,q1,q3)
         }
       }
     }

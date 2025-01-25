@@ -9,6 +9,7 @@ import {Marco} from './surfs/marco'
 import {Moebius} from './surfs/moebius'
 import {MoebiusOriented} from './surfs/moebius'
 import {Octa} from './surfs/octa'
+import {Sphere} from './surfs/sphere'
 
 class Command {
     action: (World) => void
@@ -55,6 +56,9 @@ export default class Commands {
             '8': new Command(world =>
                 this.loadNextOctaMode(world), 
                 'cycle octahedrons'),
+            '9': new Command(world =>
+                world.load(new Sphere()), 
+                'sphere'),
             'M': new Command(world => 
                 world.load(new Manu()), 
                 'manu'),

@@ -18,9 +18,9 @@ export class Catenoid extends Surf {
         this.addBorderVertex(2*PI/3, 1) // 4
         this.addBorderVertex(4*PI/3, 1) // 5
 
-        this.addQuad(0,1,4,3)
-        this.addQuad(1,2,5,4)
-        this.addQuad(2,0,3,5)
+        this.addQuad(0, 0,1,4,3)
+        this.addQuad(0, 1,2,5,4)
+        this.addQuad(0, 2,0,3,5)
     }
 }
 

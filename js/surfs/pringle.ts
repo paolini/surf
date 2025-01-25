@@ -17,7 +17,7 @@ export class Pringle extends Surf {
         this.addBorderVertex(2*PI/3) // v1
         this.addBorderVertex(4*PI/3) // v2
     
-        this.addTriangle(0, 1, 2)
+        this.addTriangle(0, 0, 1, 2)
     }
 
     run() {

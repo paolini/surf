@@ -5,9 +5,26 @@ type Index = number
 
 export default class Surf {
     name: string
-    buffer: ArrayBuffer
-    vertices: Float32Array
-    indices: Index[]
+    
+    // memory on GPU
+    buffer: ArrayBuffer 
+    
+    // list of vertex coordinates
+    // x1 y1 z1 x2 y2 z2 ...
+    // n_vertices = vertices.length / 3
+    vertices: Float32Array 
+
+    // list of surfaces
+    // each surface is a list of vertex indices for triangles
+    // a1 b1 c1 a2 b2 c2 ...
+    // coordinates of vertex with index k
+    // are vertices[3*k], vertices[3*k+1], vertices[3*k+2]
+    // n_triangles = indices.length / 3
+    surfaces: Index[][]
+
+    // list of fixed borders
+    // each border is a list of vertex indices and parameter values
+    // f(t) is used for smooth interpolation
     borders: ({
         f: (t:number)=>Vector,
         indices: [Index,number][]
@@ -19,8 +36,16 @@ export default class Surf {
         this.name = name
         this.buffer = new ArrayBuffer(0)
         this.vertices = new Float32Array()
-        this.indices = []
+        this.surfaces = []
         this.borders = []
+        
+        this.newSurface()
+    }
+
+    newSurface() {
+        const n = this.surfaces.length
+        this.surfaces.push([])
+        return n
     }
 
     /**
@@ -80,13 +105,13 @@ export default class Surf {
         return vertexIndex
     }
 
-    addTriangle(a:Index, b:Index, c:Index) {
-        this.indices.push(a, b, c)
+    addTriangle(surface_index:Index, a:Index, b:Index, c:Index) {
+        this.surfaces[surface_index].push(a, b, c)
     }
 
-    addQuad(a:Index,b:Index,c:Index,d:Index) {
-        this.indices.push(a,b,c)
-        this.indices.push(a,c,d)
+    addQuad(surface_index:Index,a:Index,b:Index,c:Index,d:Index) {
+        this.surfaces[surface_index].push(a,b,c)
+        this.surfaces[surface_index].push(a,c,d)
     }
 
     squaredDistanceBetweenVertices(a:Index, b:Index):number {
@@ -102,16 +127,19 @@ export default class Surf {
 
     computeMaxEdgeLengthSquared(): number {
         var maxEdgeLength = 0
-        const n = this.indices.length / 3
-        for (var t=0; t<n ; t++) {
-            const a = this.indices[3*t]
-            const b = this.indices[3*t + 1]
-            const c = this.indices[3*t + 2]
-            maxEdgeLength = Math.max(maxEdgeLength, 
-                this.squaredDistanceBetweenVertices(a,b),
-                this.squaredDistanceBetweenVertices(b,c),
-                this.squaredDistanceBetweenVertices(c,a))
-        }
+        const self=this
+        this.surfaces.forEach(function(indices:Index[]) {
+            const n = indices.length / 3
+            for (var t=0; t<n ; t++) {
+                const a = indices[3*t]
+                const b = indices[3*t + 1]
+                const c = indices[3*t + 2]
+                maxEdgeLength = Math.max(maxEdgeLength, 
+                    self.squaredDistanceBetweenVertices(a,b),
+                    self.squaredDistanceBetweenVertices(b,c),
+                    self.squaredDistanceBetweenVertices(c,a))
+            }
+        })
         return maxEdgeLength
     }
 
@@ -125,24 +153,22 @@ export default class Surf {
     }
 
     triangulateOnce(r:number = 0): boolean {
-        const indices = this.indices
         const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
         const targetLengthSquared = r>0 ? Math.max(r*r,0.5*maxEdgeLengthSquared) : 0.5*maxEdgeLengthSquared
-
+        
         // console.log({maxEdgeLengthSquared,"sqrt":Math.sqrt(maxEdgeLengthSquared),targetLengthSquared,r,rr:r*r})
-
+        
         if (r>0 && (maxEdgeLengthSquared < r*r)) return true // below threshold
-
-
+        
+        
         let lastIndex = this.vertices.length / 3
         const newVertices: {[key:string]:Vector} = {} 
-        const newIndices: number[] = []
-         
+        
         const computeKey = (a,b) => {
             if (a>b) return `${b}:${a}`
             else return `${a}:${b}`
         }
-
+        
         const split = (a, b) => {
             const d = this.squaredDistanceBetweenVertices(a,b)
             if (d < targetLengthSquared) return
@@ -151,68 +177,74 @@ export default class Surf {
             newVertices[key] = [a,b,lastIndex++]
         }
 
-        for (let t=0 ; t<indices.length ; t+=3) {
-            split(indices[t], indices[t+1])
-            split(indices[t+1], indices[t+2])
-            split(indices[t+2], indices[t])
-        }
+        this.surfaces = this.surfaces.map(function(indices) {
+            const newIndices: number[] = []
 
-        for (let t=0 ; t<indices.length ; t+=3) {
-            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
-            const mid_ab = newVertices[computeKey(a,b)]
-            const mid_bc = newVertices[computeKey(b,c)]
-            const mid_ca = newVertices[computeKey(c,a)]
-            if (mid_ab) {
-                const ab = mid_ab[2]
-                if (mid_bc) {
-                    const bc = mid_bc[2]
-                    if (mid_ca) {
-                        const ca = mid_ca[2]
-                        newIndices.push(ab, bc, ca)
-                        newIndices.push(a, ab, ca)
-                        newIndices.push(ab, b, bc)
-                        newIndices.push(ca, bc, c)
+            for (let t=0 ; t<indices.length ; t+=3) {
+                split(indices[t], indices[t+1])
+                split(indices[t+1], indices[t+2])
+                split(indices[t+2], indices[t])
+            }
+
+            for (let t=0 ; t<indices.length ; t+=3) {
+                const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+                const mid_ab = newVertices[computeKey(a,b)]
+                const mid_bc = newVertices[computeKey(b,c)]
+                const mid_ca = newVertices[computeKey(c,a)]
+                if (mid_ab) {
+                    const ab = mid_ab[2]
+                    if (mid_bc) {
+                        const bc = mid_bc[2]
+                        if (mid_ca) {
+                            const ca = mid_ca[2]
+                            newIndices.push(ab, bc, ca)
+                            newIndices.push(a, ab, ca)
+                            newIndices.push(ab, b, bc)
+                            newIndices.push(ca, bc, c)
+                        } else {
+                            newIndices.push(a, ab, c)
+                            newIndices.push(ab, bc, c)
+                            newIndices.push(ab, b, bc)
+                        }
                     } else {
-                        newIndices.push(a, ab, c)
-                        newIndices.push(ab, bc, c)
-                        newIndices.push(ab, b, bc)
+                        if (mid_ca) {
+                            const ca = mid_ca[2]
+                            newIndices.push(c, ca, b)
+                            newIndices.push(ca, ab, b)
+                            newIndices.push(ca, a, ab)
+                        } else {
+                            newIndices.push(a, ab, c)
+                            newIndices.push(ab, b, c)
+                        }
                     }
                 } else {
-                    if (mid_ca) {
-                        const ca = mid_ca[2]
-                        newIndices.push(c, ca, b)
-                        newIndices.push(ca, ab, b)
-                        newIndices.push(ca, a, ab)
+                    if (mid_bc) {
+                        const bc = mid_bc[2]
+                        if (mid_ca) {
+                            const ca = mid_ca[2]
+                            newIndices.push(b, bc, a)
+                            newIndices.push(bc, ca, a)
+                            newIndices.push(bc, c, ca)
+                        } else {
+                            newIndices.push(a, b, bc)
+                            newIndices.push(a, bc, c)
+                        }
                     } else {
-                        newIndices.push(a, ab, c)
-                        newIndices.push(ab, b, c)
-                    }
-                }
-            } else {
-                if (mid_bc) {
-                    const bc = mid_bc[2]
-                    if (mid_ca) {
-                        const ca = mid_ca[2]
-                        newIndices.push(b, bc, a)
-                        newIndices.push(bc, ca, a)
-                        newIndices.push(bc, c, ca)
-                    } else {
-                        newIndices.push(a, b, bc)
-                        newIndices.push(a, bc, c)
-                    }
-                } else {
-                    if (mid_ca) {
-                        const ca = mid_ca[2]
-                        newIndices.push(a, b, ca)
-                        newIndices.push(b, c, ca)
-                    } else {
-                        newIndices.push(a, b, c)
+                        if (mid_ca) {
+                            const ca = mid_ca[2]
+                            newIndices.push(a, b, ca)
+                            newIndices.push(b, c, ca)
+                        } else {
+                            newIndices.push(a, b, c)
+                        }
                     }
                 }
             }
-        }
+            // console.log(`newIndices: ${newIndices}`)
+            return newIndices        
+        })
+
         // console.log(`newVertices: ${JSON.stringify(newVertices)}`)
-        // console.log(`newIndices: ${newIndices}`)
         const values: Vector[] = Object.values(newVertices)
         this.resizeVertices(this.vertices.length/3 + values.length)
         const vertices = this.vertices
@@ -250,7 +282,6 @@ export default class Surf {
             border.indices = newIndices
         })
         
-        this.indices=newIndices
         return false
     }
 
@@ -261,10 +292,10 @@ export default class Surf {
         }
     }
 
-    computeArea(): number {
+    computeArea(surface_n:Index): number {
         let area = 0.0
         const vertices = this.vertices
-        const indices = this.indices
+        const indices = this.surfaces[surface_n]
 
         for (let t=0; t<indices.length; t+=3) {
             const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
@@ -281,35 +312,37 @@ export default class Surf {
 
     computeMeanCurvatureVector(): Float32Array {
         const vertices = this.vertices
-        const indices = this.indices
         const n = vertices.length / 3
         const meanCurvatureVector = new Float32Array(n*3)
 
-        for (let t=0; t<indices.length; t+=3) {
-            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
-            const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
-            const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
-            const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
-            const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
-            const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
-            const [xbc,ybc,zbc] = [xc-xb, yc-yb, zc-zb]
-            const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
-            const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+        for (let s=0; s<this.surfaces.length;s++) {
+            const indices = this.surfaces[s]
 
-            const acbc = xac*xbc + yac*ybc + zac*zbc
-            const abbc = xab*xbc + yab*ybc + zab*zbc
-            const abac = xab*xac + yab*yac + zab*zac
+            for (let t=0; t<indices.length; t+=3) {
+                const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+                const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+                const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+                const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+                const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+                const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+                const [xbc,ybc,zbc] = [xc-xb, yc-yb, zc-zb]
+                const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
+                const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
 
-            meanCurvatureVector[3*a]   += (-acbc*xab + abbc*xac) / area2
-            meanCurvatureVector[3*a+1] += (-acbc*yab + abbc*yac) / area2
-            meanCurvatureVector[3*a+2] += (-acbc*zab + abbc*zac) / area2
-            meanCurvatureVector[3*b]   += (-abac*xbc + acbc*xab) / area2
-            meanCurvatureVector[3*b+1] += (-abac*ybc + acbc*yab) / area2
-            meanCurvatureVector[3*b+2] += (-abac*zbc + acbc*zab) / area2
-            meanCurvatureVector[3*c]   += (-abbc*xac + abac*xbc) / area2
-            meanCurvatureVector[3*c+1] += (-abbc*yac + abac*ybc) / area2
-            meanCurvatureVector[3*c+2] += (-abbc*zac + abac*zbc) / area2
+                const acbc = xac*xbc + yac*ybc + zac*zbc
+                const abbc = xab*xbc + yab*ybc + zab*zbc
+                const abac = xab*xac + yab*yac + zab*zac
 
+                meanCurvatureVector[3*a]   += (-acbc*xab + abbc*xac) / area2
+                meanCurvatureVector[3*a+1] += (-acbc*yab + abbc*yac) / area2
+                meanCurvatureVector[3*a+2] += (-acbc*zab + abbc*zac) / area2
+                meanCurvatureVector[3*b]   += (-abac*xbc + acbc*xab) / area2
+                meanCurvatureVector[3*b+1] += (-abac*ybc + acbc*yab) / area2
+                meanCurvatureVector[3*b+2] += (-abac*zbc + acbc*zab) / area2
+                meanCurvatureVector[3*c]   += (-abbc*xac + abac*xbc) / area2
+                meanCurvatureVector[3*c+1] += (-abbc*yac + abac*ybc) / area2
+                meanCurvatureVector[3*c+2] += (-abbc*zac + abac*zbc) / area2
+            }
         }
 
         for (let i=0; i<this.borders.length; ++i) {
@@ -325,34 +358,39 @@ export default class Surf {
 
     computeNormalVector(): Float32Array {
         const vertices = this.vertices
-        const indices = this.indices
         const n = vertices.length / 3
         const normalVector = new Float32Array(n*3)
+        
+        for (let s=0;s<this.surfaces.length;s++) {
+            const indices = this.surfaces[s]
 
-        for (let t=0; t<indices.length; t+=3) {
-            const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
-            const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
-            const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
-            const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
-            const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
-            const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
-            const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
-            const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+            for (let t=0; t<indices.length; t+=3) {
+                const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
+                const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+                const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+                const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+                const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+                const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
+                const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
+                const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
 
-            normalVector[3*a]   += xabxac / area2
-            normalVector[3*a+1] += yabyac / area2
-            normalVector[3*a+2] += zabzac / area2
-            normalVector[3*b]   += xabxac / area2
-            normalVector[3*b+1] += yabyac / area2
-            normalVector[3*b+2] += zabzac / area2
-            normalVector[3*c]   += xabxac / area2
-            normalVector[3*c+1] += yabyac / area2
-            normalVector[3*c+2] += zabzac / area2
+                normalVector[3*a]   += xabxac / area2
+                normalVector[3*a+1] += yabyac / area2
+                normalVector[3*a+2] += zabzac / area2
+                normalVector[3*b]   += xabxac / area2
+                normalVector[3*b+1] += yabyac / area2
+                normalVector[3*b+2] += zabzac / area2
+                normalVector[3*c]   += xabxac / area2
+                normalVector[3*c+1] += yabyac / area2
+                normalVector[3*c+2] += zabzac / area2
+            }
         }
 
         // normalize normal vectors
         for (let i=0; i<n; ++i) {
-            const d = Math.sqrt(normalVector[3*i]*normalVector[3*i] + normalVector[3*i+1]*normalVector[3*i+1] + normalVector[3*i+2]*normalVector[3*i+2])
+            const d = Math.sqrt(normalVector[3*i]*normalVector[3*i] 
+                + normalVector[3*i+1]*normalVector[3*i+1] 
+                + normalVector[3*i+2]*normalVector[3*i+2])
             normalVector[3*i] /= d
             normalVector[3*i+1] /= d
             normalVector[3*i+2] /= d
@@ -392,23 +430,26 @@ export default class Surf {
     exportToSTL(): string {
         let stl = 'solid surf\n';
         const vertices = this.vertices;
-        const indices = this.indices;
 
-        for (let i = 0; i < indices.length; i += 3) {
-            const [a, b, c] = [indices[i], indices[i + 1], indices[i + 2]];
-            const va: Vector = [vertices[3 * a], vertices[3 * a + 1], vertices[3 * a + 2]];
-            const vb: Vector = [vertices[3 * b], vertices[3 * b + 1], vertices[3 * b + 2]];
-            const vc: Vector = [vertices[3 * c], vertices[3 * c + 1], vertices[3 * c + 2]];
+        for (let s=0;s<this.surfaces.length;++s) {
+            const indices = this.surfaces[s];
 
-            const normal = computeNormal(va, vb, vc);
+            for (let i = 0; i < indices.length; i += 3) {
+                const [a, b, c] = [indices[i], indices[i + 1], indices[i + 2]];
+                const va: Vector = [vertices[3 * a], vertices[3 * a + 1], vertices[3 * a + 2]];
+                const vb: Vector = [vertices[3 * b], vertices[3 * b + 1], vertices[3 * b + 2]];
+                const vc: Vector = [vertices[3 * c], vertices[3 * c + 1], vertices[3 * c + 2]];
 
-            stl += `facet normal ${normal[0]} ${normal[1]} ${normal[2]}\n`;
-            stl += `  outer loop\n`;
-            stl += `    vertex ${va[0]} ${va[1]} ${va[2]}\n`;
-            stl += `    vertex ${vb[0]} ${vb[1]} ${vb[2]}\n`;
-            stl += `    vertex ${vc[0]} ${vc[1]} ${vc[2]}\n`;
-            stl += `  endloop\n`;
-            stl += `endfacet\n`;
+                const normal = computeNormal(va, vb, vc);
+
+                stl += `facet normal ${normal[0]} ${normal[1]} ${normal[2]}\n`;
+                stl += `  outer loop\n`;
+                stl += `    vertex ${va[0]} ${va[1]} ${va[2]}\n`;
+                stl += `    vertex ${vb[0]} ${vb[1]} ${vb[2]}\n`;
+                stl += `    vertex ${vc[0]} ${vc[1]} ${vc[2]}\n`;
+                stl += `  endloop\n`;
+                stl += `endfacet\n`;
+            }
         }
 
         stl += 'endsolid surf\n';
@@ -515,10 +556,11 @@ export default class Surf {
         out += "// plane { <0,0,1>, -5 pigment {color rgb <1,1,1>}\n"
         out += "// finish {ambient 0.5}}\n"
     
-        const triangles = this.indices
-        for (let t=0; t<triangles.length; t+=3) {
-            out_triangle(triangles[t], triangles[t+1], triangles[t+2])
-        }
+        this.surfaces.forEach(function(triangles) {
+            for (let t=0; t<triangles.length; t+=3) {
+                out_triangle(triangles[t], triangles[t+1], triangles[t+2])
+            }
+        })
 
         out += "texture {Color}\n"
         out += "}\n\n//END\n"

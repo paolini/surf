@@ -32,7 +32,7 @@ export class Helicoid extends Surf {
     this.addBorderVertex(0)
     this.addBorderVertex(PERIOD/3)
     this.addBorderVertex(2*PERIOD/3)
-    this.addTriangle(0,1,2)
+    this.addTriangle(0, 0,1,2)
   }
 
   run() {

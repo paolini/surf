@@ -4,24 +4,42 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import Surf from './surf'
 
 class SurfMesh extends THREE.Mesh {
-	surf: Surf
-    geometry: any // workaround: THREE.Mesh should declare this!
+    //geometry: any // workaround: THREE.Mesh should declare this!
 
-	constructor(surf: Surf, material: THREE.Material) {
+	constructor(surf: Surf, triangles, material: THREE.MeshBasicMaterial) {
 		const geometry = new THREE.BufferGeometry()
-		geometry.setIndex( surf.indices )
+		geometry.setIndex( triangles )
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( surf.vertices, 3 ) )
 		geometry.computeVertexNormals()
 		super( geometry, material )
-		this.surf = surf
 	}
 } 
+
+class SurfObject extends THREE.Group {
+	surf: Surf
+	material: THREE.MeshBasicMaterial
+
+	constructor(surf: Surf, material: THREE.MeshBasicMaterial) {
+		super()
+		this.material = material
+		this.attachSurf(surf)
+	}
+
+	reload(surf: Surf) {
+		this.clear()
+		this.surf = surf
+		const self = this
+		surf.surfaces.map(function(triangles){
+			self.add(new SurfMesh(surf, triangles, material))
+		})
+	}
+}
 
 export default class World {
     $info: HTMLElement|null 
     $title: HTMLElement|null
 	AUTO_RUN: boolean
-	surfMesh: SurfMesh|undefined
+	surfObjects: SurfObject[]
 	scene: THREE.Scene
 	camera: THREE.Camera
 	renderer: THREE.Renderer
@@ -91,9 +109,16 @@ export default class World {
 	}
 	
 	replaceSurf(surf: Surf) {
-		if (this.surfMesh) this.scene.remove(this.surfMesh)
-		this.surfMesh = new SurfMesh(surf, this.material)
-		this.scene.add(this.surfMesh)
+		const scene = this.scene
+		this.surfObjects.forEach(function(surfObject) {
+			surfObject.remove_from_scene(scene)
+		})
+		this.surfObjects
+		this.surfMeshes = surf.surfaces.map(function(_, surf_n) {
+			const mesh = new SurfMesh(surf, surf_n, this.material)
+			this.scene.add(mesh)
+			return mesh
+		})
 	}
 
 	load(surf: Surf) {

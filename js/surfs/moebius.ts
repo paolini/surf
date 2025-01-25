@@ -28,9 +28,9 @@ export class Moebius extends MoebiusBase {
   constructor(R:number=1.0, r:number=0.4) {
     super(R,r)
     const p = this.computeP()
-    this.addQuad(p[0],p[1],p[4],p[3])
-    this.addQuad(p[1],p[2],p[5],p[4])
-    this.addQuad(p[2],p[3],p[0],p[5])
+    this.addQuad(0, p[0],p[1],p[4],p[3])
+    this.addQuad(0, p[1],p[2],p[5],p[4])
+    this.addQuad(0, p[2],p[3],p[0],p[5])
   }
 }
 
@@ -39,8 +39,8 @@ export class MoebiusOriented extends MoebiusBase {
     super(R,r)
     this.name += " oriented"
     const p = this.computeP()
-    this.addTriangle(p[4],p[3],p[5])
-    this.addQuad(p[0],p[2],p[3],p[5])
-    this.addTriangle(p[0],p[1],p[2])
+    this.addTriangle(0, p[4],p[3],p[5])
+    this.addQuad(0, p[0],p[2],p[3],p[5])
+    this.addTriangle(0, p[0],p[1],p[2])
   }
 }  

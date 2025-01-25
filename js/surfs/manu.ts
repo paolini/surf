@@ -18,13 +18,13 @@ export class Manu extends Surf {
     }
   
     function side(a, b) {
-      self.addTriangle(p[a][0],p[b][0],p[b][1])
-      self.addTriangle(p[a][0],p[b][1],p[a][1])
+      self.addTriangle(0, p[a][0],p[b][0],p[b][1])
+      self.addTriangle(0, p[a][0],p[b][1],p[a][1])
     }
     
     function triangle(a, b, c) {
-      self.addTriangle(p[c][0],p[b][0],p[a][0])
-      self.addTriangle(p[a][1],p[b][1],p[c][1]);
+      self.addTriangle(0, p[c][0],p[b][0],p[a][0])
+      self.addTriangle(0, p[a][1],p[b][1],p[c][1]);
     }
   
     function quad(a, b, c, d) {
@@ -194,16 +194,16 @@ export class Manu extends Surf {
       let last_q = first_q
       for (let x=dx;x<l;x+=dx) {
         const q = rectangle(x)
-        this.addQuad(last_q[0],q[0],q[1],last_q[1])
-        this.addQuad(last_q[1],q[1],q[2],last_q[2])
-        this.addQuad(last_q[2],q[2],q[3],last_q[3])
-        this.addQuad(last_q[3],q[3],q[0],last_q[0])
+        this.addQuad(0, last_q[0],q[0],q[1],last_q[1])
+        this.addQuad(0, last_q[1],q[1],q[2],last_q[2])
+        this.addQuad(0, last_q[2],q[2],q[3],last_q[3])
+        this.addQuad(0, last_q[3],q[3],q[0],last_q[0])
         last_q = q
       }
-      this.addQuad(last_q[2],first_q[0],first_q[1],last_q[3])
-      this.addQuad(last_q[3],first_q[1],first_q[2],last_q[0])
-      this.addQuad(last_q[0],first_q[2],first_q[3],last_q[1])
-      this.addQuad(last_q[1],first_q[3],first_q[0],last_q[2])  
+      this.addQuad(0, last_q[2],first_q[0],first_q[1],last_q[3])
+      this.addQuad(0, last_q[3],first_q[1],first_q[2],last_q[0])
+      this.addQuad(0, last_q[0],first_q[2],first_q[3],last_q[1])
+      this.addQuad(0, last_q[1],first_q[3],first_q[0],last_q[2])  
     }
 
     function transform(v:Vector):Vector {
