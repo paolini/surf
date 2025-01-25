@@ -1,5 +1,4 @@
 import World from './world'
-import Surf from './surf'
 import {Pringle} from './surfs/pringle'
 import {Catenoid} from './surfs/catenoid'
 import {Cube} from './surfs/cube'
