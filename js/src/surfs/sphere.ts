@@ -25,6 +25,14 @@ export class Sphere extends Surf {
       this.addQuad(0,v100,v110,v111,v101)
       this.addQuad(0,v010,v011,v111,v110)
       this.addQuad(0,v001,v101,v111,v011)
+
+      // 1 volume
+      this.volumes=[
+        {
+          surfaces: [[0,1.0]],
+          pressure: 1.0
+        }
+      ]
     }
 
     run() {}

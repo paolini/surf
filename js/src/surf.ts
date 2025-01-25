@@ -3,6 +3,11 @@ import * as THREE from 'three'
 
 type Index = number
 
+type Volume = {
+    surfaces: [Index, number][] // list of surface indices and orientation
+    pressure: number // pressure inside the volume
+}
+
 export default class Surf {
     name: string
     
@@ -22,6 +27,14 @@ export default class Surf {
     // n_triangles = indices.length / 3
     surfaces: Index[][]
 
+    // for each surface 
+    // list of pressure on triangles (given by volumes)
+    surfacesPressures: Float32Array[] | null
+
+    // for each surface
+    // list of coordinates of area x normal for each triangle
+    surfacesNormalAreaVectors: Float32Array[] | null
+
     // list of fixed borders
     // each border is a list of vertex indices and parameter values
     // f(t) is used for smooth interpolation
@@ -31,6 +44,8 @@ export default class Surf {
         period: number,
         closed: boolean
     })[]
+
+    volumes: Volume[]
 
     constructor(name) {
         this.name = name
@@ -412,16 +427,60 @@ export default class Surf {
         return normalVector
     }
 
-    evolveVector(dt: number, meanCurvatureVector: Float32Array) {
+    computeSurfacePressures() {
+        const surfacesPressures = this.surfaces.map((indices) => new Float32Array(indices.length/3))
+
+        this.volumes.forEach(volume => {
+            volume.surfaces.forEach(([surface, orientation]) => {
+                const pressures = surfacesPressures[surface]
+                for (let i=0; i<pressures.length; i++) {
+                    pressures[i] += orientation*volume.pressure
+                }
+            })
+        })
+
+        this.surfacesPressures = surfacesPressures
+    }
+
+    computeSurfaceNormalAreaVectors() {
+        const vertices = this.vertices
+        const surfacesNormalAreaVectors = this.surfaces.map((indices) => {
+            // indices is a flat list of triples of vertex indices
+            const n_triangles = indices.length / 3
+            const vectors = new Float32Array(n_triangles*3)
+            for (let i=0; i<indices.length; i+=3) {
+                const [a,b,c] = [indices[i], indices[i+1], indices[i+2]]
+                const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
+                const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
+                const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
+                const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
+                const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]            
+                
+                const [xv,yv,zv] = [
+                    yab*zac - zab*yac,
+                    zab*xac - xab*zac,
+                    xab*yac - yab*xac]
+
+                
+            }
+            return vectors
+        })
+
+        this.surfacesNormalAreaVectors = surfacesNormalAreaVectors
+    }
+
+    computeVertexPressureForce
+
+    evolveVector(dt: number, vector: Float32Array) {
         const vertices = this.vertices
         for (let i=0; i<vertices.length; i+=3) {
-            vertices[i] -= dt*meanCurvatureVector[i]
-            vertices[i + 1] -= dt*meanCurvatureVector[i + 1]
-            vertices[i + 2] -= dt*meanCurvatureVector[i + 2]
+            vertices[i] -= dt*vector[i]
+            vertices[i + 1] -= dt*vector[i + 1]
+            vertices[i + 2] -= dt*vector[i + 2]
         }
     }
 
-    evolveMeanCurvature(dt: number, count: number = 1) {
+    evolve(dt: number, count: number = 1) {
         while(count>0) {
             const vector = this.computeMeanCurvatureVector()
             this.evolveVector(dt, vector)
@@ -431,9 +490,9 @@ export default class Surf {
 
     run() {
         this.triangulate(1)
-        this.evolveMeanCurvature(0.05,20)
+        this.evolve(0.05,20)
         this.triangulate(0.5)
-        this.evolveMeanCurvature(0.05,20)
+        this.evolve(0.05,20)
     }
 
     /**

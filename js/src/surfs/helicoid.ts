@@ -38,7 +38,7 @@ export class Helicoid extends Surf {
   run() {
     for (let i=0; i<10; i++) {
       this.triangulate()
-      this.evolveMeanCurvature(0.05,20)
+      this.evolve(0.05,20)
     }
   }
 }

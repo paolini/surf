@@ -22,8 +22,8 @@ export class Pringle extends Surf {
 
     run() {
         this.triangulate(1)
-        this.evolveMeanCurvature(0.05,20)
+        this.evolve(0.05,20)
         this.triangulate(0.5)
-        this.evolveMeanCurvature(0.05,20)
+        this.evolve(0.05,20)
     }
 }

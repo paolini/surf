@@ -84,7 +84,7 @@ export default class Commands {
                 }, 'export POV-RAY'),
             '@': new Command(world => {
                 world.AUTO_RUN = !world.AUTO_RUN
-                }, 'toggle auto run'),
+                }, 'toggle automatic evolution'),
         }
     }
         

@@ -121,7 +121,7 @@ export default class World {
 
 	evolve(count=1) {
 		if (!this.surfObject) return
-		this.surfObject.surf.evolveMeanCurvature(0.05,count)
+		this.surfObject.surf.evolve(0.05,count)
 		this.surfObject.children.forEach(mesh => (mesh as SurfMesh).geometry.attributes.position.needsUpdate = true)
 	}
 
