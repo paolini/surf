@@ -5,7 +5,6 @@ import Surf from './surf'
 
 class SurfMesh extends THREE.Mesh {
 	surf: Surf
-    geometry: any // workaround: THREE.Mesh should declare this!
 
 	constructor(surf: Surf, material: THREE.Material) {
 		const geometry = new THREE.BufferGeometry()
@@ -24,9 +23,9 @@ export default class World {
 	surfMesh: SurfMesh|undefined
 	scene: THREE.Scene
 	camera: THREE.Camera
-	renderer: THREE.Renderer
-	material: THREE.Material
-	controls: THREE.Controls
+	renderer: THREE.WebGLRenderer
+	material: THREE.MeshPhongMaterial
+	controls: OrbitControls
 
 	constructor(options: {$canvas: HTMLCanvasElement, $title?: HTMLElement, $info?: HTMLElement}) {
         this.$info = options.$info || null
