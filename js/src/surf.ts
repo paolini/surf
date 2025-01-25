@@ -314,6 +314,7 @@ export default class Surf {
         const vertices = this.vertices
         const n = vertices.length / 3
         const meanCurvatureVector = new Float32Array(n*3)
+        const areas = Array.from({length: n}, (_, i) => 0.0)
 
         for (let s=0; s<this.surfaces.length;s++) {
             const indices = this.surfaces[s]
@@ -329,20 +330,32 @@ export default class Surf {
                 const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
                 const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
 
-                const acbc = xac*xbc + yac*ybc + zac*zbc
-                const abbc = xab*xbc + yab*ybc + zab*zbc
-                const abac = xab*xac + yab*yac + zab*zac
+                areas[a] += area2
+                areas[b] += area2
+                areas[c] += area2
 
-                meanCurvatureVector[3*a]   += (-acbc*xab + abbc*xac) / area2
-                meanCurvatureVector[3*a+1] += (-acbc*yab + abbc*yac) / area2
-                meanCurvatureVector[3*a+2] += (-acbc*zab + abbc*zac) / area2
-                meanCurvatureVector[3*b]   += (-abac*xbc + acbc*xab) / area2
-                meanCurvatureVector[3*b+1] += (-abac*ybc + acbc*yab) / area2
-                meanCurvatureVector[3*b+2] += (-abac*zbc + acbc*zab) / area2
-                meanCurvatureVector[3*c]   += (-abbc*xac + abac*xbc) / area2
-                meanCurvatureVector[3*c+1] += (-abbc*yac + abac*ybc) / area2
-                meanCurvatureVector[3*c+2] += (-abbc*zac + abac*zbc) / area2
+                const acbc = (xac*xbc + yac*ybc + zac*zbc)
+                const abbc = (xab*xbc + yab*ybc + zab*zbc)
+                const abac = (xab*xac + yab*yac + zab*zac)
+
+                meanCurvatureVector[3*a]   += (-acbc*xab + abbc*xac)
+                meanCurvatureVector[3*a+1] += (-acbc*yab + abbc*yac)
+                meanCurvatureVector[3*a+2] += (-acbc*zab + abbc*zac)
+                meanCurvatureVector[3*b]   += (-abac*xbc + acbc*xab)
+                meanCurvatureVector[3*b+1] += (-abac*ybc + acbc*yab)
+                meanCurvatureVector[3*b+2] += (-abac*zbc + acbc*zab)
+                meanCurvatureVector[3*c]   += (-abbc*xac + abac*xbc)
+                meanCurvatureVector[3*c+1] += (-abbc*yac + abac*ybc)
+                meanCurvatureVector[3*c+2] += (-abbc*zac + abac*zbc)
             }
+        }
+
+        for (let i=0; i<n; i++) {
+            const j = 3*i;
+            const c = 8/areas[i]
+            meanCurvatureVector[j]   *= c
+            meanCurvatureVector[j+1] *= c
+            meanCurvatureVector[j+2] *= c
         }
 
         for (let i=0; i<this.borders.length; ++i) {

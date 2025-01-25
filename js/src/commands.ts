@@ -81,7 +81,10 @@ export default class Commands {
             'O': new Command(world => {
                     const pov = world.surfMesh?.surf.exportToPovRay(world.camera)
                     if (pov) download(pov, 'surf.pov', 'text/plain')
-                }, 'export POV-RAY')
+                }, 'export POV-RAY'),
+            '@': new Command(world => {
+                world.AUTO_RUN = !world.AUTO_RUN
+                }, 'toggle auto run'),
         }
     }
         
