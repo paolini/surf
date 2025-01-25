@@ -35,6 +35,9 @@ export default class Surf {
     // list of coordinates of area x normal for each triangle
     surfacesNormalAreaVectors: Float32Array[] | null
 
+    // list of areas of fans around each vertex
+    vertexAreas: Float32Array | null
+
     // list of fixed borders
     // each border is a list of vertex indices and parameter values
     // f(t) is used for smooth interpolation
@@ -53,6 +56,10 @@ export default class Surf {
         this.vertices = new Float32Array()
         this.surfaces = []
         this.borders = []
+        this.volumes = []
+        this.surfacesPressures = null
+        this.surfacesNormalAreaVectors = null
+        this.vertexAreas = null
         
         this.newSurface()
     }
@@ -168,6 +175,8 @@ export default class Surf {
     }
 
     triangulateOnce(r:number = 0): boolean {
+        this.surfacesPressures = null
+
         const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
         const targetLengthSquared = r>0 ? Math.max(r*r,0.5*maxEdgeLengthSquared) : 0.5*maxEdgeLengthSquared
         
@@ -326,13 +335,22 @@ export default class Surf {
     }
 
     computeMeanCurvatureVector(): Float32Array {
+        // and also computes this.surfacesNormalAreaVectors and this.vertexAreas
+
+        this.surfacesNormalAreaVectors = this.surfaces.map((indices) => new Float32Array(indices.length))
+        const surfacesNormalAreaVectors = this.surfacesNormalAreaVectors
+
         const vertices = this.vertices
-        const n = vertices.length / 3
-        const meanCurvatureVector = new Float32Array(n*3)
-        const areas = Array.from({length: n}, (_, i) => 0.0)
+        const n_vertices = vertices.length / 3
+        this.vertexAreas = new Float32Array(n_vertices)
+        const vertexAreas = this.vertexAreas
+
+        const meanCurvatureVector = new Float32Array(n_vertices*3)
 
         for (let s=0; s<this.surfaces.length;s++) {
             const indices = this.surfaces[s]
+            const normals = surfacesNormalAreaVectors[s]
+            if (normals.length !== indices.length) throw Error("normals length mismatch")
 
             for (let t=0; t<indices.length; t+=3) {
                 const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
@@ -342,12 +360,20 @@ export default class Surf {
                 const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
                 const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
                 const [xbc,ybc,zbc] = [xc-xb, yc-yb, zc-zb]
-                const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
-                const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+                const [vx,vy,vz] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
 
-                areas[a] += area2
-                areas[b] += area2
-                areas[c] += area2
+
+                debugger
+                // store normals in buffer for later use
+                normals[t  ] = vx
+                normals[t+1] = vy
+                normals[t+2] = vz
+
+                const area2 = Math.sqrt(vx*vx + vy*vy + vz*vz)
+
+                vertexAreas[a] += area2
+                vertexAreas[b] += area2
+                vertexAreas[c] += area2
 
                 const acbc = (xac*xbc + yac*ybc + zac*zbc)
                 const abbc = (xab*xbc + yab*ybc + zab*zbc)
@@ -365,9 +391,9 @@ export default class Surf {
             }
         }
 
-        for (let i=0; i<n; i++) {
+        for (let i=0; i<n_vertices; i++) {
             const j = 3*i;
-            const c = 8/areas[i]
+            const c = 8/vertexAreas[i]
             meanCurvatureVector[j]   *= c
             meanCurvatureVector[j+1] *= c
             meanCurvatureVector[j+2] *= c
@@ -384,39 +410,39 @@ export default class Surf {
         return meanCurvatureVector
     }
 
+    /*
     computeNormalVector(): Float32Array {
         const vertices = this.vertices
         const n = vertices.length / 3
         const normalVector = new Float32Array(n*3)
+
+        if (this.surfacesNormalAreaVectors === null) throw Error("surfacesNormalAreaVectors not computed")
         
         for (let s=0;s<this.surfaces.length;s++) {
             const indices = this.surfaces[s]
+            const areaNormals = this.surfacesNormalAreaVectors[s]
 
             for (let t=0; t<indices.length; t+=3) {
                 const [a,b,c] = [indices[t], indices[t+1], indices[t+2]]
-                const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
-                const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
-                const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
-                const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
-                const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]
-                const [xabxac,yabyac,zabzac] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
-                const area2 = Math.sqrt(xabxac*xabxac + yabyac*yabyac + zabzac*zabzac)
+                const [vx,vy,vz] = [areaNormals[t], areaNormals[t+1], areaNormals[t+2]]
+                const area2 = Math.sqrt(vx*vx + vy*vy + vz*vz)
 
-                normalVector[3*a]   += xabxac / area2
-                normalVector[3*a+1] += yabyac / area2
-                normalVector[3*a+2] += zabzac / area2
-                normalVector[3*b]   += xabxac / area2
-                normalVector[3*b+1] += yabyac / area2
-                normalVector[3*b+2] += zabzac / area2
-                normalVector[3*c]   += xabxac / area2
-                normalVector[3*c+1] += yabyac / area2
-                normalVector[3*c+2] += zabzac / area2
+                normalVector[3*a]   += vx / area2
+                normalVector[3*a+1] += vy / area2
+                normalVector[3*a+2] += vz / area2
+                normalVector[3*b]   += vx / area2
+                normalVector[3*b+1] += vy / area2
+                normalVector[3*b+2] += vz / area2
+                normalVector[3*c]   += vx / area2
+                normalVector[3*c+1] += vy / area2
+                normalVector[3*c+2] += vz / area2
             }
         }
 
         // normalize normal vectors
         for (let i=0; i<n; ++i) {
-            const d = Math.sqrt(normalVector[3*i]*normalVector[3*i] 
+            const d = Math.sqrt(
+                normalVector[3*i]*normalVector[3*i] 
                 + normalVector[3*i+1]*normalVector[3*i+1] 
                 + normalVector[3*i+2]*normalVector[3*i+2])
             normalVector[3*i] /= d
@@ -425,7 +451,7 @@ export default class Surf {
         }
 
         return normalVector
-    }
+    }*/
 
     computeSurfacePressures() {
         const surfacesPressures = this.surfaces.map((indices) => new Float32Array(indices.length/3))
@@ -442,34 +468,55 @@ export default class Surf {
         this.surfacesPressures = surfacesPressures
     }
 
-    computeSurfaceNormalAreaVectors() {
+    computePressureForces(): Float32Array {
         const vertices = this.vertices
-        const surfacesNormalAreaVectors = this.surfaces.map((indices) => {
-            // indices is a flat list of triples of vertex indices
-            const n_triangles = indices.length / 3
-            const vectors = new Float32Array(n_triangles*3)
-            for (let i=0; i<indices.length; i+=3) {
-                const [a,b,c] = [indices[i], indices[i+1], indices[i+2]]
-                const [xa,ya,za] = [vertices[3*a], vertices[3*a+1], vertices[3*a+2]]
-                const [xb,yb,zb] = [vertices[3*b], vertices[3*b+1], vertices[3*b+2]]
-                const [xc,yc,zc] = [vertices[3*c], vertices[3*c+1], vertices[3*c+2]]
-                const [xab,yab,zab] = [xb-xa, yb-ya, zb-za]
-                const [xac,yac,zac] = [xc-xa, yc-ya, zc-za]            
-                
-                const [xv,yv,zv] = [
-                    yab*zac - zab*yac,
-                    zab*xac - xab*zac,
-                    xab*yac - yab*xac]
+        const n_vertices = vertices.length / 3
+        const pressureForces = new Float32Array(n_vertices*3)
+        const surfacesPressures = this.surfacesPressures
+        const surfacesNormalAreaVectors = this.surfacesNormalAreaVectors
+        const vertexAreas = this.vertexAreas
 
-                
+        if (surfacesPressures === null) throw Error("surfacesPressures not computed")
+        if (surfacesNormalAreaVectors === null) throw Error("surfacesNormalAreaVectors not computed")
+        if (vertexAreas === null) throw Error("vertexAreas not computed")
+
+        this.surfaces.forEach((indices, surface_n) => {
+            // indices is a flat list of vertex indices triples
+            const pressures = surfacesPressures[surface_n]
+            const normals = surfacesNormalAreaVectors[surface_n]
+            const n_triangles = indices.length / 3
+            if (pressures.length !== n_triangles) throw Error("pressures length mismatch")
+            if (normals.length !== 3*n_triangles) throw Error("normals length mismatch")
+
+            for(let t=0;t<n_triangles;t++) {
+                const [a,b,c] = [indices[3*t], indices[3*t+1], indices[3*t+2]]
+                const pressure = pressures[t]
+                const [nx,ny,nz] = [normals[3*t], normals[3*t+1], normals[3*t+2]]
+
+                pressureForces[3*a  ] += pressure*nx
+                pressureForces[3*a+1] += pressure*ny
+                pressureForces[3*a+2] += pressure*nz
+                pressureForces[3*b  ] += pressure*nx
+                pressureForces[3*b+1] += pressure*ny
+                pressureForces[3*b+2] += pressure*nz
+                pressureForces[3*c  ] += pressure*nx
+                pressureForces[3*c+1] += pressure*ny
+                pressureForces[3*c+2] += pressure*nz
+
             }
-            return vectors
         })
 
-        this.surfacesNormalAreaVectors = surfacesNormalAreaVectors
-    }
+        if (vertexAreas.length !== n_vertices) throw Error("vertexAreas length mismatch")
 
-    computeVertexPressureForce
+        for (let i=0; i<n_vertices; i++) {
+            const c = 1/vertexAreas[i]
+            pressureForces[3*i  ] *= c
+            pressureForces[3*i+1] *= c
+            pressureForces[3*i+2] *= c
+        }
+
+        return pressureForces
+    }
 
     evolveVector(dt: number, vector: Float32Array) {
         const vertices = this.vertices
@@ -481,8 +528,17 @@ export default class Surf {
     }
 
     evolve(dt: number, count: number = 1) {
+        if (this.volumes && this.volumes.length > 0 && this.surfacesPressures === null) this.computeSurfacePressures()
+
         while(count>0) {
             const vector = this.computeMeanCurvatureVector()
+            if (this.volumes.length>0) {
+                const pressureForces = this.computePressureForces()
+                if (pressureForces.length !== vector.length) throw Error("pressureForces length mismatch")
+                for (let i=0; i<vector.length; i++) {
+                    vector[i] -= pressureForces[i] // dovrebbe esserci il segno opposto ?!?
+                }
+            }
             this.evolveVector(dt, vector)
             count--
         }
@@ -530,7 +586,7 @@ export default class Surf {
 
     exportToPovRay(camera: THREE.camera): string {
         const vertices = this.vertices
-        const normalVector = this.computeNormalVector()
+        const normalVector = this.computeMeanCurvatureVector() // to compute normals!
 
         let out:string = ''
 

@@ -14,7 +14,8 @@ if ($commands) {
 	$commands.innerHTML = commands.htmlHelpString()
 }
 
-commands.exec('0', world) // load pringle
+commands.exec('L', world) // load lens
+//commands.exec('0', world) // load pringle
 document.addEventListener("keydown", evt => commands.exec(evt.key, world), false)
 
 

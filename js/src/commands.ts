@@ -9,6 +9,7 @@ import {Moebius} from './surfs/moebius'
 import {MoebiusOriented} from './surfs/moebius'
 import {Octa} from './surfs/octa'
 import {Sphere} from './surfs/sphere'
+import {Lens} from './surfs/lens'
 
 class Command {
     action: (World) => void
@@ -59,6 +60,9 @@ export default class Commands {
             '9': new Command(world =>
                 world.load(new Sphere()), 
                 'sphere'),
+            'L': new Command(world =>
+                world.load(new Lens()), 
+                'lens'),
             'M': new Command(world => 
                 world.load(new Manu()), 
                 'manu'),
