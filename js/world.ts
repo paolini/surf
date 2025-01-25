@@ -4,9 +4,7 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import Surf from './surf'
 
 class SurfMesh extends THREE.Mesh {
-    //geometry: any // workaround: THREE.Mesh should declare this!
-
-	constructor(surf: Surf, triangles, material: THREE.MeshBasicMaterial) {
+	constructor(surf: Surf, triangles, material: THREE.Material) {
 		const geometry = new THREE.BufferGeometry()
 		geometry.setIndex( triangles )
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( surf.vertices, 3 ) )
@@ -17,20 +15,20 @@ class SurfMesh extends THREE.Mesh {
 
 class SurfObject extends THREE.Group {
 	surf: Surf
-	material: THREE.MeshBasicMaterial
+	material: THREE.Material
 
-	constructor(surf: Surf, material: THREE.MeshBasicMaterial) {
+	constructor(surf: Surf, material: THREE.Material) {
 		super()
 		this.material = material
-		this.attachSurf(surf)
+		this.surf = surf
+		this.reload()
 	}
 
-	reload(surf: Surf) {
+	reload() {
 		this.clear()
-		this.surf = surf
 		const self = this
-		surf.surfaces.map(function(triangles){
-			self.add(new SurfMesh(surf, triangles, material))
+		this.surf.surfaces.map(function(triangles){
+			self.add(new SurfMesh(self.surf, triangles, self.material))
 		})
 	}
 }
@@ -39,7 +37,7 @@ export default class World {
     $info: HTMLElement|null 
     $title: HTMLElement|null
 	AUTO_RUN: boolean
-	surfObjects: SurfObject[]
+	surfObject: SurfObject|null
 	scene: THREE.Scene
 	camera: THREE.Camera
 	renderer: THREE.WebGLRenderer
@@ -108,42 +106,29 @@ export default class World {
 		this.renderer.render(this.scene, this.camera)
 	}
 	
-	replaceSurf(surf: Surf) {
-		const scene = this.scene
-		this.surfObjects.forEach(function(surfObject) {
-			surfObject.remove_from_scene(scene)
-		})
-		this.surfObjects
-		this.surfMeshes = surf.surfaces.map(function(_, surf_n) {
-			const mesh = new SurfMesh(surf, surf_n, this.material)
-			this.scene.add(mesh)
-			return mesh
-		})
-	}
-
 	load(surf: Surf) {
+		if (this.surfObject) this.scene.remove(this.surfObject)
 		if (this.AUTO_RUN) surf.run()
-		this.replaceSurf(surf)
+		this.surfObject = new SurfObject(surf, this.material)
+		this.scene.add(this.surfObject)
 	}
 
 	triangulate() {
-		if (!this.surfMesh) return
-		const surf = this.surfMesh.surf
-		surf.triangulate()
-		this.replaceSurf(surf)
+		if (!this.surfObject) return
+		this.surfObject.surf.triangulate()
+		this.surfObject.reload()
 	}
 
 	evolve(count=1) {
-		if (!this.surfMesh) return
-		this.surfMesh.surf.evolveMeanCurvature(0.05,count)
-		this.surfMesh.geometry.attributes.position.needsUpdate = true
+		if (!this.surfObject) return
+		this.surfObject.surf.evolveMeanCurvature(0.05,count)
+		this.surfObject.children.forEach(mesh => (mesh as SurfMesh).geometry.attributes.position.needsUpdate = true)
 	}
 
 	run() {
-		if (!this.surfMesh) return
-		const surf = this.surfMesh.surf
-		surf.run()
-		this.replaceSurf(surf)
+		if (!this.surfObject) return
+		this.surfObject.surf.run()
+		this.surfObject.reload()
 	}	
 
 	updateInfo() {
@@ -160,13 +145,13 @@ export default class World {
 			}
 		}
 
-		const surf = this.surfMesh?.surf
-		if (surf) {
+		if (this.surfObject) {
+			const surf = this.surfObject.surf
 			info.surf = {
 				name: surf.name,
 				vertices: surf.vertices.length,
-				faces: surf.indices.length/3,
-				area: surf.computeArea(),
+				faces: surf.surfaces.map(indices => indices.length/3),
+				area: surf.surfaces.map((indices,i) => surf.computeArea(i)),
 			}
 		}
 
@@ -175,7 +160,7 @@ export default class World {
 		}
 
         if (this.$title) {
-            this.$title.textContent = `Surf [${surf?.name || 'No Surface'}]`
+            this.$title.textContent = `Surf [${this.surfObject?.surf.name || 'No Surface'}]`
         }
 	}
 }

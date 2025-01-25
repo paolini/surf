@@ -1,5 +1,5 @@
 import World from './world'
-
+import Surf from './surf'
 import {Pringle} from './surfs/pringle'
 import {Catenoid} from './surfs/catenoid'
 import {Cube} from './surfs/cube'
@@ -31,6 +31,7 @@ export default class Commands {
 
     constructor() {
         this.octa_mode = -1
+
         this.commands = {
             '0': new Command(world => 
                 world.load(new Pringle()), 
