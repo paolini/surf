@@ -42,9 +42,9 @@ export default class World {
 	surfObjects: SurfObject[]
 	scene: THREE.Scene
 	camera: THREE.Camera
-	renderer: THREE.Renderer
-	material: THREE.Material
-	controls: THREE.Controls
+	renderer: THREE.WebGLRenderer
+	material: THREE.MeshPhongMaterial
+	controls: OrbitControls
 
 	constructor(options: {$canvas: HTMLCanvasElement, $title?: HTMLElement, $info?: HTMLElement}) {
         this.$info = options.$info || null
