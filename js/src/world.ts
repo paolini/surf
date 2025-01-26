@@ -48,7 +48,7 @@ export default class World {
         this.$info = options.$info || null
         this.$title = options.$title || null
         const canvas = options.$canvas
-		this.AUTO_RUN = false
+		this.AUTO_RUN = true
 
 		this.scene = new THREE.Scene()
 		this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
