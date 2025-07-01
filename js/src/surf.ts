@@ -309,6 +309,101 @@ export default class Surf {
         return false
     }
 
+    equalizeTriangles() {
+        const vertices = this.vertices
+
+        console.log(`equalizeTriangles`)
+        console.log(`n_vertices: ${this.vertices.length/3}`)
+
+        function distance_squared(v1,v2) {
+            const dx = vertices[3*v2+0] - vertices[3*v1+0]
+            const dy = vertices[3*v2+1] - vertices[3*v1+1]
+            const dz = vertices[3*v2+2] - vertices[3*v1+2]
+            return dx*dx + dy*dy + dz*dz 
+        }
+
+        this.surfaces = this.surfaces.map(indices => {
+            const n_triangles = indices.length / 3
+            console.log(`n_triangles: ${n_triangles}`)
+            function hash(index1, index2) {
+                return index1 <= index2
+                    ? `${index1}:${index2}`
+                    : `${index2}:${index1}`
+            }
+
+            type EdgeData = {
+                v1: number, v2: number, v3: number, v4: number,
+                t1: number, t2: number,
+                // v4<0, t2<0: single triangle found so far
+                // v3<0: don't flip...
+            }
+            const edge_data: EdgeData[] = []
+
+            /* store information of the triangle relative 
+             * to the edge v1,v2
+             */
+
+            function store_triangle(t,v1,v2,v3) {
+                //if (v1>v2) [v1, v2] = [v2, v1]
+                const h = hash(v1,v2)
+                const data = edge_data[h]
+                if (data === undefined) {
+                    edge_data[h] = {
+                        v1, v2, v3,
+                        v4: -1,
+                        t1: t,
+                        t2: -1
+                    }
+                } else if (data.v4 < 0) {
+                    data.t2 = t
+                    data.v4 = v3
+                    // second triangle
+                    const d = distance_squared(v1,v2)
+                    const dd = distance_squared(data.v3, v3)
+                    if (d <= dd) data.v3 = -1 // don't flip
+                } else {
+                    data.v3 = -1 // don't flip: too many triangles on this edge
+                }
+            }
+
+            for (let t=0; t<indices.length; t+=3) {
+                store_triangle(t, indices[t], indices[t+1], indices[t+2])
+                store_triangle(t, indices[t+1], indices[t+2], indices[t])
+                store_triangle(t, indices[t+2], indices[t], indices[t+1])                
+            }
+
+            // operate
+            const new_indices = [...indices]
+            let modified = false
+            Object.values(edge_data).forEach(data => {
+                if (data.v3 >= 0 && data.v4 >= 0) {
+                    // require flip
+
+                    // invalidate adjacent edges
+                    function invalidate(v,ww) {
+                        const h = hash(v,ww)
+                        const data = edge_data[h]
+                        if (data) data.v3 = -1 // keep
+                    }                    
+                    invalidate(data.v1,data.v3)
+                    invalidate(data.v1,data.v4)
+                    invalidate(data.v2,data.v3)
+                    invalidate(data.v2,data.v4)
+                    
+                    new_indices[data.t1] = data.v1
+                    new_indices[data.t1+1] = data.v4
+                    new_indices[data.t1+2] = data.v3
+                    new_indices[data.t2] = data.v2
+                    new_indices[data.t2+1] = data.v3
+                    new_indices[data.t2+2] = data.v4 
+                    modified = true
+                }
+            })
+
+            return modified ? new_indices : indices
+        })
+    }
+
     printVertices() {
         const vertices = this.vertices
         for (let i=0; 3*i<vertices.length; i++) {

@@ -221,6 +221,12 @@ export default class World {
 		this.surfObject.children.forEach(mesh => (mesh as SurfMesh).geometry.attributes.position.needsUpdate = true)
 	}
 
+	equalize() {
+		if (!this.surfObject) return
+		this.surfObject.surf.equalizeTriangles()
+		this.surfObject.reload()
+	}
+
 	run() {
 		if (!this.surfObject) return
 		this.surfObject.surf.run()

@@ -69,6 +69,9 @@ export default class Commands {
             't': new Command(world => 
                 world.triangulate(), 
                 'triangulate'),
+            'u': new Command(world => 
+                world.equalize(),
+                'equalize'),
             'e': new Command(world => 
                 world.evolve(0.05), 
                 'evolve'),
