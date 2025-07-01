@@ -8,8 +8,8 @@ export class Catenoid extends Surf {
     constructor(R:number=1, h:number=1) {
         super(`catenoid R:${R} h:${h}`)
 
-        this.addBorder(t => [R*cos(t), R*sin(t),0], 2*PI)
-        this.addBorder(t => [R*cos(t), R*sin(t),h], 2*PI)
+        this.addBorder(t => [R*cos(t), R*sin(t),-h/2], 2*PI)
+        this.addBorder(t => [R*cos(t), R*sin(t),h/2], 2*PI)
 
         this.addBorderVertex(0,0) // 0
         this.addBorderVertex(2*PI/3, 0) // 1
