@@ -211,7 +211,7 @@ export default class World {
 
 	triangulate() {
 		if (!this.surfObject) return
-		this.surfObject.surf.triangulate()
+		this.surfObject.surf.triangulateToR()
 		this.surfObject.reload()
 	}
 

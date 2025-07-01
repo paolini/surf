@@ -136,18 +136,18 @@ export default class Surf {
         this.surfaces[surface_index].push(a,c,d)
     }
 
-    squaredDistanceBetweenVertices(a:Index, b:Index):number {
+    distanceBetweenVerticesSquared(a:Index, b:Index):number {
         const x1 = this.vertices[3*a]
         const y1 = this.vertices[3*a + 1]
         const z1 = this.vertices[3*a + 2]
         const x2 = this.vertices[3*b]
         const y2 = this.vertices[3*b + 1]
         const z2 = this.vertices[3*b + 2]
-        const d = Math.sqrt( (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2 )
+        const d = (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2
         return d
     }
 
-    computeMaxEdgeLengthSquared(): number {
+    computeMaxSquaredEdgeLength(): number {
         var maxEdgeLength = 0
         const self=this
         this.surfaces.forEach(function(indices:Index[]) {
@@ -157,32 +157,32 @@ export default class Surf {
                 const b = indices[3*t + 1]
                 const c = indices[3*t + 2]
                 maxEdgeLength = Math.max(maxEdgeLength, 
-                    self.squaredDistanceBetweenVertices(a,b),
-                    self.squaredDistanceBetweenVertices(b,c),
-                    self.squaredDistanceBetweenVertices(c,a))
+                    self.distanceBetweenVerticesSquared(a,b),
+                    self.distanceBetweenVerticesSquared(b,c),
+                    self.distanceBetweenVerticesSquared(c,a))
             }
         })
         return maxEdgeLength
     }
 
-    triangulate(r: number=0) {
+    triangulateToR(r: number=0) {
         if (r===0) {
-            this.triangulateOnce()
+            this.triangulateOnceToR()
             return
         }
         
-        while(!this.triangulateOnce(r)) {}
+        while(!this.triangulateOnceToR(r)) {}
     }
 
-    triangulateOnce(r:number = 0): boolean {
+    triangulateOnceToR(r:number = 0): boolean {
         this.surfacesPressures = null
 
-        const maxEdgeLengthSquared = this.computeMaxEdgeLengthSquared()
-        const targetLengthSquared = r>0 ? Math.max(r*r,0.5*maxEdgeLengthSquared) : 0.5*maxEdgeLengthSquared
+        const maxSquaredEdgeLength = this.computeMaxSquaredEdgeLength()
+        const targetSquaredLength = r>0 ? Math.max(r*r,0.5*maxSquaredEdgeLength) : 0.5*maxSquaredEdgeLength
         
         // console.log({maxEdgeLengthSquared,"sqrt":Math.sqrt(maxEdgeLengthSquared),targetLengthSquared,r,rr:r*r})
         
-        if (r>0 && (maxEdgeLengthSquared < r*r)) return true // below threshold
+        if (r>0 && (maxSquaredEdgeLength < r*r)) return true // below threshold
         
         
         let lastIndex = this.vertices.length / 3
@@ -194,8 +194,8 @@ export default class Surf {
         }
         
         const split = (a, b) => {
-            const d = this.squaredDistanceBetweenVertices(a,b)
-            if (d < targetLengthSquared) return
+            const dd = this.distanceBetweenVerticesSquared(a,b)
+            if (dd < targetSquaredLength) return
             const key = computeKey(a,b)
             if (key in newVertices) return
             newVertices[key] = [a,b,lastIndex++]
@@ -362,8 +362,6 @@ export default class Surf {
                 const [xbc,ybc,zbc] = [xc-xb, yc-yb, zc-zb]
                 const [vx,vy,vz] = [yab*zac - zab*yac, zab*xac - xab*zac, xab*yac - yab*xac]
 
-
-                debugger
                 // store normals in buffer for later use
                 normals[t  ] = vx
                 normals[t+1] = vy
@@ -545,9 +543,9 @@ export default class Surf {
     }
 
     run() {
-        this.triangulate(1)
+        this.triangulateToR(1)
         this.evolve(0.05,20)
-        this.triangulate(0.5)
+        this.triangulateToR(0.25)
         this.evolve(0.05,20)
     }
 

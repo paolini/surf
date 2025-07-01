@@ -6,7 +6,7 @@ const cos = Math.cos
 const sin = Math.sin
 
 export class Manu extends Surf {
-  constructor(depth:number=0.5, R:number=1.0, r:number=0.4, h:number=0.1, radius:number=0.7) { 
+  constructor(depth:number=0.5, R:number=1.0, r:number=0.4, h:number=0.1, radius:number=0.5) { 
     super(`manu depth:${depth} R:${R} r:${r} h:${h} radius:${radius}`)
     let p:[number,number][] = []
     const self = this
@@ -173,7 +173,7 @@ export class Manu extends Surf {
     }
 
     const l = build("NUELEMA")
-    this.triangulate(radius)
+    this.triangulateToR(radius)
 
     if (true) { // build connecting moebius strip
       const dx = 0.2

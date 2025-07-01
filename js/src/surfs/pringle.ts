@@ -21,9 +21,9 @@ export class Pringle extends Surf {
     }
 
     run() {
-        this.triangulate(1)
+        this.triangulateToR(1)
         this.evolve(0.05,20)
-        this.triangulate(0.5)
+        this.triangulateToR(0.25)
         this.evolve(0.05,20)
     }
 }

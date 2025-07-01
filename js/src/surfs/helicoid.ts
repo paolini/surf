@@ -37,7 +37,7 @@ export class Helicoid extends Surf {
 
   run() {
     for (let i=0; i<10; i++) {
-      this.triangulate()
+      this.triangulateToR()
       this.evolve(0.05,20)
     }
   }
