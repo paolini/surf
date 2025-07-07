@@ -639,9 +639,16 @@ export default class Surf {
 
     run() {
         this.triangulateToR(1)
-        this.evolve(0.05,20)
+        this.evolve(0.05,10)
+        this.equalizeTriangles()
+        this.triangulateToR(0.5)
+        this.evolve(0.05,10)
+        this.equalizeTriangles()
         this.triangulateToR(0.25)
-        this.evolve(0.05,20)
+        this.evolve(0.05,10)
+        this.equalizeTriangles()
+        this.evolve(0.05,10)
+        this.equalizeTriangles()
     }
 
     /**
