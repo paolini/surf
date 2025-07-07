@@ -2,111 +2,29 @@ import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 
 import Surf from './surf'
-import { BufferAttribute, Vector3 } from 'three'
 
 class SurfMesh extends THREE.Mesh {
-	constructor(surf: Surf, triangles, material: THREE.Material) {
+	constructor(surf: Surf, surf_number: number, material: THREE.Material) {
+		const triangles = surf.surfaces[surf_number]
 		const geometry = new THREE.BufferGeometry()
 		geometry.setIndex( triangles )
-		geometry.setAttribute( 'position', new THREE.BufferAttribute( surf.vertices, 3 ) )
+		geometry.setAttribute('position', new THREE.BufferAttribute( surf.vertices, 3 ) )
 		// geometry.computeVertexNormals()
 		super( geometry, material )
-		this.computeVertexNormals()
-	}
-
-	computeVertexNormals() {
-		// copied from THREE>BufferGeometry>computeVertexNormals
-
-		const index = this.geometry.index;
-		const positionAttribute = this.geometry.getAttribute( 'position' );
-
-		if ( positionAttribute !== undefined ) {
-
-			let normalAttribute = this.geometry.getAttribute( 'normal' );
-
-			if ( normalAttribute === undefined ) {
-
-				normalAttribute = new BufferAttribute( new Float32Array( positionAttribute.count * 3 ), 3 );
-				this.geometry.setAttribute( 'normal', normalAttribute );
-
-			} else {
-
-				// reset existing normals to zero
-
-				for ( let i = 0, il = normalAttribute.count; i < il; i ++ ) {
-
-					normalAttribute.setXYZ( i, 0, 0, 0 );
-
-				}
-
+		if (!surf.surfacesNormalAreaVectors) {
+			surf.computeMeanCurvatureVector()
+			if (!surf.surfacesNormalAreaVectors) {
+				console.log(`ERROR: normalAreaVectors are not being computed`)
+				return
 			}
-
-			const pA = new Vector3(), pB = new Vector3(), pC = new Vector3();
-			const nA = new Vector3(), nB = new Vector3(), nC = new Vector3();
-			const cb = new Vector3(), ab = new Vector3();
-
-			// indexed elements
-
-			if ( index ) {
-
-				for ( let i = 0, il = index.count; i < il; i += 3 ) {
-
-					const vA = index.getX( i + 0 );
-					const vB = index.getX( i + 1 );
-					const vC = index.getX( i + 2 );
-
-					pA.fromBufferAttribute( positionAttribute, vA );
-					pB.fromBufferAttribute( positionAttribute, vB );
-					pC.fromBufferAttribute( positionAttribute, vC );
-
-					cb.subVectors( pC, pB );
-					ab.subVectors( pA, pB );
-					cb.cross( ab );
-
-					nA.fromBufferAttribute( normalAttribute, vA );
-					nB.fromBufferAttribute( normalAttribute, vB );
-					nC.fromBufferAttribute( normalAttribute, vC );
-
-					nA.add( cb );
-					nB.add( cb );
-					nC.add( cb );
-
-					normalAttribute.setXYZ( vA, nA.x, nA.y, nA.z );
-					normalAttribute.setXYZ( vB, nB.x, nB.y, nB.z );
-					normalAttribute.setXYZ( vC, nC.x, nC.y, nC.z );
-
-				}
-
-			} else {
-
-				// non-indexed elements (unconnected triangle soup)
-
-				for ( let i = 0, il = positionAttribute.count; i < il; i += 3 ) {
-
-					pA.fromBufferAttribute( positionAttribute, i + 0 );
-					pB.fromBufferAttribute( positionAttribute, i + 1 );
-					pC.fromBufferAttribute( positionAttribute, i + 2 );
-
-					cb.subVectors( pC, pB );
-					ab.subVectors( pA, pB );
-					cb.cross( ab );
-
-					normalAttribute.setXYZ( i + 0, cb.x, cb.y, cb.z );
-					normalAttribute.setXYZ( i + 1, cb.x, cb.y, cb.z );
-					normalAttribute.setXYZ( i + 2, cb.x, cb.y, cb.z );
-
-				}
-
-			}
-
-			this.geometry.normalizeNormals();
-
-			normalAttribute.needsUpdate = true;
-
 		}
-
+		const normalAreaVectors = surf.surfacesNormalAreaVectors[surf_number]
+		const normals = new Float32Array(normalAreaVectors)
+		const normalAttribute = new THREE.BufferAttribute( normals, 3)
+		geometry.setAttribute('normal', normalAttribute)
+		geometry.normalizeNormals()
+		normalAttribute.needsUpdate = true
 	}
-
 } 
 
 class SurfObject extends THREE.Group {
@@ -123,9 +41,9 @@ class SurfObject extends THREE.Group {
 	reload() {
 		this.clear()
 		const self = this
-		this.surf.surfaces.forEach(function(triangles){
-			self.add(new SurfMesh(self.surf, triangles, self.material))
-		})
+		for (let surf_number = 0; surf_number < this.surf.surfaces.length; surf_number ++) {
+			self.add(new SurfMesh(self.surf, surf_number, self.material))
+		}
 	}
 }
 
@@ -157,7 +75,7 @@ export default class World {
 		this.renderer.setSize(canvas.width, canvas.height);		
 		this.material = new THREE.MeshPhongMaterial()
 		// this.material.wireframe = true
-		this.material.side = THREE.DoubleSide;
+		this.material.side = THREE.DoubleSide
 		this.material.color.setRGB(0,0.5,1);
 		this.material.transparent = true;
 		this.material.opacity = 0.85;
