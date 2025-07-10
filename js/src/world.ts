@@ -86,7 +86,7 @@ export default class World {
 		}
 
 		if (true) {
-			const color = 0xFFFFFF;
+			const color = 0xFFFF00;
 			const intensity = 1;
 			const light = new THREE.DirectionalLight(color, intensity);
 			light.position.set(0, 10, 0);
